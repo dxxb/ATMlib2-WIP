@@ -1,6 +1,6 @@
 #include <Arduino.h>
 #include <Arduboy2.h>
-#include <ATMlib.h>
+#include <ATMlib2.h>
 #include "bitmaps.h"
 #include "song.h"
 

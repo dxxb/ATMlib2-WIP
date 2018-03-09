@@ -1,13 +1,13 @@
 {
-    "name": "ATMlib",
+    "name": "ATMlib2",
     "keywords": "arduboy, game, sound, music",
-    "description": "A library for playing 4 channel chiptune music and oscilator sounds, intended for use with the Arduboy game system",
+    "description": "A library for playing 4 channel chiptune music and oscilator sounds, intended for use with the Arduboy game system. This is the successor to ATMlib https://github.com/TEAMarg/ATMlib",
     "repository":
     {
         "type": "git",
-        "url": "https://github.com/TEAMarg/ATMlib.git"
+        "url": "https://github.com/TEAMarg/ATMlib2.git"
     },
-    "version": "1.2.4",
+    "version": "0.9.0",
     "exclude": "extras",
     "frameworks": "arduino",
     "platforms": "atmelavr"

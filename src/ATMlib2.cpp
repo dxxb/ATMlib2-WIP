@@ -1,5 +1,5 @@
 
-#include <ATMlib.h>
+#include <ATMlib2.h>
 
 
 void ATMsynth::setup(void) {

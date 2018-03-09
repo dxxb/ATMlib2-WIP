@@ -1,5 +1,5 @@
-#ifndef _ATMLIB_H_
-#define _ATMLIB_H_
+#ifndef _ATMLIB2_H_
+#define _ATMLIB2_H_
 
 extern "C" {
 #include "atm_synth.h"
