@@ -72,7 +72,6 @@ static void osc_reset(void)
 		/* set modulation to 50% duty cycle */
 		osc_params_array[i].mod = 0x7F;
 	}
-	osc_params_array[OSC_CH_THREE].phase_increment = 0x0001; // Seed LFSR
 }
 
 static void osc_setactive(const uint8_t active_flag)
@@ -144,28 +143,20 @@ ISR(TIMER3_COMPA_vect)
 {
 	uint16_t pcm = OSC_DC_OFFSET;
 	struct osc_params *p = osc_params_array;
-	for (uint8_t i=0;i<3;i++,p++) {
+	for (uint8_t i=0;i<4;i++,p++) {
 		const uint8_t vol = p->vol;
-		const uint16_t phi = p->phase_increment;
-		if (!vol || !phi) {
+		if (!vol) {
 			/* skip if volume or phase increment is zero and save some cycles */
 			continue;
 		}
-		const uint16_t pha = osc_pha_acc_array[i] + phi;
-		osc_pha_acc_array[i] = pha;
-		if (OSC_HI(pha) > p->mod) {
-			pcm += vol;
-		} else {
-			pcm -= vol;
+		const uint16_t phi = p->phase_increment;
+		if (!(phi & 0x7FFF)) {
+			/* skip if volume or phase increment is zero and save some cycles */
+			continue;
 		}
-	}
-
-	/* p == &osc_params_array[3] when leaving the loop above */
-	{
-		const uint8_t vol = p->vol;
-		/* skip if volume is zero and save some cycles */
-		if (vol) {
-			uint16_t shift_reg = p->phase_increment;
+		if (OSC_HI(phi) & 0x80) {
+			uint16_t shift_reg = osc_pha_acc_array[i];
+			shift_reg = shift_reg ? shift_reg : 0x0001; // Seed LFSR
 			const uint8_t msb = OSC_HI(shift_reg) & 0x80;
 			shift_reg += shift_reg;
 			if (msb) {
@@ -174,7 +165,15 @@ ISR(TIMER3_COMPA_vect)
 			} else {
 				pcm -= vol;
 			}
-			p->phase_increment = shift_reg;
+			osc_pha_acc_array[i] = shift_reg;
+		} else {
+			const uint16_t pha = osc_pha_acc_array[i] + phi;
+			osc_pha_acc_array[i] = pha;
+			if (OSC_HI(pha) > p->mod) {
+				pcm += vol;
+			} else {
+				pcm -= vol;
+			}
 		}
 	}
 

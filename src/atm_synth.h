@@ -13,14 +13,12 @@
 #define ATM_HAS_FX_NONE (0)
 
 #if ATM_HAS_FX_NONE
-#define ATM_HAS_FX_NOISE_RETRIG (0)
 #define ATM_HAS_FX_NOTE_RETRIG (0)
 #define ATM_HAS_FX_SLIDE (0)
 #define ATM_HAS_FX_LFO (0)
 #define ATM_HAS_FX_GLISSANDO (0)
 #define ATM_HAS_FX_LOOP (0)
 #else
-#define ATM_HAS_FX_NOISE_RETRIG (1)
 #define ATM_HAS_FX_NOTE_RETRIG (1)
 #define ATM_HAS_FX_SLIDE (1)
 #define ATM_HAS_FX_LFO (1)
@@ -150,12 +148,6 @@ struct atm_channel_state {
 	uint8_t arpNotes;       // notes: base, base+[7:4], base+[7:4]+[3:0], if FF => note cut ON
 	uint8_t arpTiming;      // [7] = reserved, [6] = not third note ,[5] = retrigger, [4:0] = tick count
 	uint8_t arpCount;
-#endif
-
-#if ATM_HAS_FX_NOISE_RETRIG
-	// Retrig FX
-	uint8_t reConfig;       // [7:2] = , [1:0] = speed // used for the noise channel
-	uint8_t reCount;
 #endif
 
 #if ATM_HAS_FX_LFO

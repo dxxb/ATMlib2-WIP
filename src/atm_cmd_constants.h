@@ -95,7 +95,6 @@ enum atm_immediate_cmd_constants {
 	ATM_CMD_I_GLISSANDO_OFF,
 	ATM_CMD_I_ARPEGGIO_OFF,
 	ATM_CMD_I_NOTECUT_OFF = ATM_CMD_I_ARPEGGIO_OFF,
-	ATM_CMD_I_NOISE_RETRIG_OFF,
 };
 
 /* Encode the number of parameter bytes after the command */
@@ -116,7 +115,7 @@ enum atm_single_byte_cmd_id_constants {
 	ATM_CMD_1P_SET_TEMPO,
 	ATM_CMD_1P_ADD_TEMPO,
 	ATM_CMD_1P_SET_VOLUME,
-	ATM_CMD_1P_NOISE_RETRIG_ON,
+	ATM_CMD_1P_SET_WAVEFORM,
 	ATM_CMD_1P_SET_MOD,
 };
 
@@ -163,7 +162,7 @@ enum atm_parametrised_cmd_constants {
 #define ATM_CMD_M_ARPEGGIO_ON(p1, p2) ATM_CMD_P_ARPEGGIO_ON, (p2), (p1)
 #define ATM_CMD_M_NOTECUT_ON(p1) ATM_CMD_P_NOTECUT_ON, (p1 | 0x40)
 
-#define ATM_CMD_M_NOISE_RETRIG_ON(p1) ATM_CMD_1P_NOISE_RETRIG_ON, (p1)
+#define ATM_CMD_M_SET_WAVEFORM(p1) ATM_CMD_1P_SET_WAVEFORM, (p1)
 
 #define ATM_CMD_M_SET_TRANSPOSITION(p1) ATM_CMD_1P_SET_TRANSPOSITION, ((uint8_t)p1)
 #define ATM_CMD_M_ADD_TRANSPOSITION(p1) ATM_CMD_1P_ADD_TRANSPOSITION, ((uint8_t)p1)

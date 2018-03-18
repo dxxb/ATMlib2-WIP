@@ -22,7 +22,7 @@ Thanks to [Modus Create](https://moduscreate.com) for sponsoring and participati
 * Command encoding designed for simpler and smaller decoder
 * Macros for manual song creation
 * C++ API built on top of C API
-* 4 channels: 3 square wave with independent programmable duty cycle + 1 noise
+* 4 channels: runtime selectable waveform can be square with programmable duty cycle or noise
 * LFO and slide effects can be applied to square wave duty cycle
 * Asynchronous playback of 1 sound effect as a mono music score on an arbitrary channel with independent tempo. Music is muted on the channel used by sound effects and resumed when the sound effect is stopped or playback finishes
 * Dual timer design: 93kHz PWM carrier for improved audio quality (was 31kHz)
@@ -238,7 +238,6 @@ ATM_CMD_I_PATTERN_END       - Pattern End/Return
 ATM_CMD_I_GLISSANDO_OFF     - Glissando/Portamento OFF
 ATM_CMD_I_ARPEGGIO_OFF      - Arpeggio OFF
 ATM_CMD_I_NOTECUT_OFF       - Note Cut OFF (alias for Arpeggio OFF)
-ATM_CMD_I_NOISE_RETRIG_OFF  - Noise re-trigger OFF
 ```
 
 #### Single byte command Macros (do not use directly, see the following Public Command Macros section)
@@ -249,7 +248,7 @@ ATM_CMD_1P_ADD_TRANSPOSITION - Add transposition
 ATM_CMD_1P_SET_TEMPO         - Set tempo
 ATM_CMD_1P_ADD_TEMPO         - Add tempo
 ATM_CMD_1P_SET_VOLUME        - Set Volume
-ATM_CMD_1P_NOISE_RETRIG_ON   - Noise re-trigger
+ATM_CMD_1P_SET_WAVEFORM      - Set waveform
 ATM_CMD_1P_SET_MOD           - Set square wave duty cycle
 ```
 
@@ -336,22 +335,21 @@ P1
               └--------> [reserved]
 ```
 
-##### Noise re-trigger
+##### Set waveform
 
 ```
-Noise re-trigger - Continuously reseed the noise PRNG (pseudo random number generator)
+Set waveform - Set waveform for a pattern
 
-Macros         : ATM_CMD_M_NOISE_RETRIG_ON(p1)
-               : ATM_CMD_I_NOISE_RETRIG_OFF
+Macros         : ATM_CMD_M_SET_WAVEFORM(p1)
 
 Parameter count: 1
 
 P1
     Size   : 1 byte
-    Name   : Effect configuration
-    Format : baaaaaass
-              ||||||└└-> ticks between reseeding minus one
-              └└└└└└---> Seed value
+    Name   : Waveform type
+    Format : b-------w
+              |||||||└-> 0: square, 1: noise
+              └└└└└└└--> [reserved]
 ```
 
 ##### Slide FX

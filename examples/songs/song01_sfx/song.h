@@ -43,9 +43,6 @@ DEFINE_PATTERN(pattern2_array, pattern2_data);
 /* Pattern 3 ticks = 2048 / bytes = 7 */
 #define pattern3_data { \
     ATM_CMD_I_STOP, \
-    ATM_CMD_M_CALL_REPEAT(0, 8), \
-    ATM_CMD_M_CALL_REPEAT(7, 24), \
-    ATM_CMD_I_STOP, \
 }
 DEFINE_PATTERN(pattern3_array, pattern3_data);
 

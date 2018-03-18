@@ -6,10 +6,9 @@
 
 static void trigger_note(const uint8_t note, struct atm_channel_state *ch)
 {
-	if (!note) {
-		ch->dst_osc_params->phase_increment = 0;
-	} else {
-		ch->dst_osc_params->phase_increment = note_index_2_phase_inc(note + ch->trans_config);
+	ch->dst_osc_params->phase_increment &= 0x8000;
+	if (note) {
+		ch->dst_osc_params->phase_increment |= note_index_2_phase_inc(note + ch->trans_config);
 #if ATM_HAS_FX_SLIDE
 		if (!ch->vf_slide.slide_amount) {
 			/* No slide */
@@ -82,12 +81,6 @@ static void process_immediate_cmd(const uint8_t ch_index, const uint8_t cmd_id, 
 			ch->arpCount = 0x80;
 #endif
 			break;
-
-		case ATM_CMD_I_NOISE_RETRIG_OFF:
-#if ATM_HAS_FX_NOISE_RETRIG
-			ch->reConfig = 0;
-#endif
-			break;
 	}
 	return;
 
@@ -102,13 +95,6 @@ static void process_1p_cmd(const struct atm_cmd_data *cmd, struct atm_synth_stat
 	const enum atm_single_byte_cmd_id_constants cid = cmd->id;
 
 	switch (cid) {
-		case ATM_CMD_1P_NOISE_RETRIG_ON:
-#if ATM_HAS_FX_NOISE_RETRIG
-			ch->reConfig = cmd->params[0];
-			ch->reCount = 0;
-#endif
-			break;
-
 		case ATM_CMD_1P_SET_TRANSPOSITION:
 			ch->trans_config = cmd->params[0];
 			break;
@@ -132,6 +118,10 @@ static void process_1p_cmd(const struct atm_cmd_data *cmd, struct atm_synth_stat
 			ch->dst_osc_params->vol = vol;
 			break;
 		}
+
+		case ATM_CMD_1P_SET_WAVEFORM:
+			ch->dst_osc_params->phase_increment = cmd->params[0] ? 0x8000 : 0;
+			break;
 
 		case ATM_CMD_1P_SET_MOD:
 		{

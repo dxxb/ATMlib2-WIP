@@ -66,7 +66,7 @@ static void addto_osc_param(const int8_t amount, const uint8_t param, struct osc
 			osc_params->vol = slide_quantity(amount, osc_params->vol, 0, MAX_VOLUME, flags);
 			break;
 		case 0x40:
-			osc_params->phase_increment = slide_quantity(amount, osc_params->phase_increment, 0, OSC_PHASE_INC_MAX, flags);
+			osc_params->phase_increment = (osc_params->phase_increment & 0x8000) | slide_quantity(amount, osc_params->phase_increment & OSC_PHASE_INC_MAX, 0, OSC_PHASE_INC_MAX, flags);
 			break;
 		case 0x80:
 			osc_params->mod = slide_quantity(amount, osc_params->mod, 0, OSC_MOD_MAX, flags);
@@ -265,21 +265,14 @@ static void process_fx(const uint8_t ch_index, struct atm_synth_state *score_sta
 {
 	(void)(score_state);
 
-#if ATM_HAS_FX_NOISE_RETRIG
-	// Noise retriggering
-	if (ch_index == OSC_CH_THREE && ch->reConfig && (ch->reCount++ >= (ch->reConfig & 0x03))) {
-		ch->dst_osc_params->phase_increment = note_index_2_phase_inc(ch->reConfig >> 2);
-		ch->reCount = 0;
-	}
-#endif
-
 #if ATM_HAS_FX_GLISSANDO
 	//Apply Glissando
 	if (ch->glisConfig && (ch->glisCount++ >= (ch->glisConfig & 0x7F))) {
 		const uint8_t amount = (ch->glisConfig & 0x80) ? -1 : 1;
 		const uint8_t note = slide_quantity(amount, ch->note, 1, LAST_NOTE, 0);
 		ch->note = note;
-		ch->dst_osc_params->phase_increment = note_index_2_phase_inc(note);
+		ch->dst_osc_params->phase_increment &= 0x8000;
+		ch->dst_osc_params->phase_increment |= note_index_2_phase_inc(note);
 		ch->glisCount = 0;
 	}
 #endif
