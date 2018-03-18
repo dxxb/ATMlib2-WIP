@@ -146,11 +146,12 @@ ISR(TIMER3_COMPA_vect)
 	struct osc_params *p = osc_params_array;
 	for (uint8_t i=0;i<3;i++,p++) {
 		const uint8_t vol = p->vol;
-		if (!vol) {
-			/* skip if volume is zero and save some cycles */
+		const uint16_t phi = p->phase_increment;
+		if (!vol || !phi) {
+			/* skip if volume or phase increment is zero and save some cycles */
 			continue;
 		}
-		const uint16_t pha = osc_pha_acc_array[i] + p->phase_increment;
+		const uint16_t pha = osc_pha_acc_array[i] + phi;
 		osc_pha_acc_array[i] = pha;
 		if (OSC_HI(pha) > p->mod) {
 			pcm += vol;
