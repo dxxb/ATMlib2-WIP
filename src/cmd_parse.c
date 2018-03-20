@@ -31,11 +31,12 @@ static void trigger_note(const uint8_t note, struct atm_channel_state *ch)
 				goto trigger_both;
 			}
 		}
-		return;
 #else
 		goto trigger_both;
 #endif
 	}
+
+	return;
 
 trigger_both:
 	ch->dst_osc_params->vol = ch->vol;
