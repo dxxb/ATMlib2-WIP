@@ -144,7 +144,7 @@ ISR(TIMER3_COMPA_vect)
 	uint16_t pcm = OSC_DC_OFFSET;
 	struct osc_params *p = osc_params_array;
 	for (uint8_t i=0;i<4;i++,p++) {
-		const uint8_t vol = p->vol;
+		int8_t vol = (int8_t)p->vol;
 		if (!vol) {
 			/* skip if volume or phase increment is zero and save some cycles */
 			continue;
@@ -154,26 +154,23 @@ ISR(TIMER3_COMPA_vect)
 			/* skip if volume or phase increment is zero and save some cycles */
 			continue;
 		}
-		if (OSC_HI(phi) & 0x80) {
-			uint16_t shift_reg = osc_pha_acc_array[i];
-			shift_reg = shift_reg ? shift_reg : 0x0001; // Seed LFSR
-			const uint8_t msb = OSC_HI(shift_reg) & 0x80;
-			shift_reg += shift_reg;
-			if (msb) {
-				pcm += vol;
-				shift_reg ^= 0x002D;
+		{
+			uint16_t pha = osc_pha_acc_array[i];
+			if (OSC_HI(phi) & 0x80) {
+				pha = pha ? pha : 0x0001; // Seed LFSR
+				const uint8_t msb = OSC_HI(pha) & 0x80;
+				pha += pha;
+				if (msb) {
+					pha ^= 0x002D;
+				} else {
+					vol = -vol;
+				}
 			} else {
-				pcm -= vol;
+				const uint16_t pha = osc_pha_acc_array[i] + phi;
+				vol = (OSC_HI(pha) > p->mod) ? vol : -vol;
 			}
-			osc_pha_acc_array[i] = shift_reg;
-		} else {
-			const uint16_t pha = osc_pha_acc_array[i] + phi;
 			osc_pha_acc_array[i] = pha;
-			if (OSC_HI(pha) > p->mod) {
-				pcm += vol;
-			} else {
-				pcm -= vol;
-			}
+			pcm += vol;
 		}
 	}
 
