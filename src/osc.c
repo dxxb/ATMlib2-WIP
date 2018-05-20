@@ -166,7 +166,7 @@ ISR(TIMER3_COMPA_vect)
 					vol = -vol;
 				}
 			} else {
-				const uint16_t pha = osc_pha_acc_array[i] + phi;
+				pha += phi;
 				vol = (OSC_HI(pha) > p->mod) ? vol : -vol;
 			}
 			osc_pha_acc_array[i] = pha;
