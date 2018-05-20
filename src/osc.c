@@ -157,10 +157,12 @@ ISR(TIMER3_COMPA_vect)
 		{
 			uint16_t pha = osc_pha_acc_array[i];
 			if (OSC_HI(phi) & 0x80) {
+				// TODO: try moving seeding from the ISR to where the waveform is selected
 				pha = pha ? pha : 0x0001; // Seed LFSR
 				const uint8_t msb = OSC_HI(pha) & 0x80;
 				pha += pha;
 				if (msb) {
+					// TODO: make sure this compiles to a sngle XOR operation on the lower 8 bits
 					pha ^= 0x002D;
 				} else {
 					vol = -vol;
