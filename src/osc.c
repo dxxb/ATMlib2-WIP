@@ -28,20 +28,11 @@
 #define OSC_LO(v) ((v)&0xFF)
 
 static void osc_reset(void);
-static void osc_setactive(const uint8_t active_flag);
-
-struct callback_info {
-	uint8_t callback_prescaler_counter;
-	uint8_t callback_prescaler_preset;
-	osc_tick_callback cb;
-	void *priv;
-};
 
 static uint8_t osc_isr_reenter = 0;
 static uint8_t osc_int_count;
 struct osc_params osc_params_array[OSC_CH_COUNT];
 static uint16_t osc_pha_acc_array[OSC_CH_COUNT];
-static struct callback_info osc_cb[OSC_TICK_CALLBACK_COUNT];
 
 void osc_setup(void)
 {
@@ -65,16 +56,15 @@ void osc_setup(void)
 
 static void osc_reset(void)
 {
-	osc_setactive(0);
+	osc_set_isr_active(0);
 	memset(osc_params_array, 0, sizeof(osc_params_array));
-	memset(osc_cb, 0, sizeof(osc_cb));
-	for (uint8_t i=0; i<OSC_CH_COUNT; i++) {
+	for (uint8_t i = 0; i < OSC_CH_COUNT; i++) {
 		/* set modulation to 50% duty cycle */
 		osc_params_array[i].mod = 0x7F;
 	}
 }
 
-static void osc_setactive(const uint8_t active_flag)
+void osc_set_isr_active(const uint8_t active_flag)
 {
 	if (active_flag) {
 		TC4H   = OSC_HI(OSC_DC_OFFSET);
@@ -87,63 +77,11 @@ static void osc_setactive(const uint8_t active_flag)
 	}
 }
 
-void osc_set_tick_rate(const uint8_t callback_idx, const uint16_t rate_hz)
-{
-	const uint8_t div = OSC_SAMPLERATE/OSC_ISR_PRESCALER_DIV/rate_hz-1;
-	osc_cb[callback_idx].callback_prescaler_preset = div;
-}
-
-void osc_set_tick_callback(const uint8_t callback_idx, const osc_tick_callback cb, const void *priv)
-{
-	osc_cb[callback_idx].cb = cb;
-	osc_cb[callback_idx].priv = (void *)priv;
-	if (cb) {
-		/* trigger callback ASAP */
-		osc_cb[callback_idx].callback_prescaler_counter = 0;
-	}
-	/* Turn interrupts on/off as needed */
-	osc_setactive(osc_cb[0].cb || osc_cb[1].cb);
-}
-
-void osc_get_tick_callback(const uint8_t callback_idx, osc_tick_callback *cb, void **priv)
-{
-	if (cb) {
-		*cb = osc_cb[callback_idx].cb;
-	}
-	if (priv) {
-		*priv = osc_cb[callback_idx].priv;
-	}
-}
-
-static __attribute__((used)) void osc_tick_handler(void)
-{
-	for (uint8_t n = 0; n < OSC_TICK_CALLBACK_COUNT; n++) {
-		struct callback_info *cbi = &osc_cb[n];
-		/* channel tick is due when callback_prescaler_counter underflows */
-		if (cbi->callback_prescaler_counter != 255) {
-			if (!cbi->cb) {
-				/*
-				Reset the counter to the highest value when the
-				callback is disabled, this way when there is only
-				one callback registered (99% of the time) the disabled
-				callback is never going to trigger a tick handler.
-				*/
-				cbi->callback_prescaler_counter = 255;
-			}
-			continue;
-		}
-		if (cbi->cb) {
-			cbi->cb(n, cbi->priv);
-		}
-		cbi->callback_prescaler_counter = cbi->callback_prescaler_preset;
-	}
-}
-
 ISR(TIMER3_COMPA_vect)
 {
 	uint16_t pcm = OSC_DC_OFFSET;
 	struct osc_params *p = osc_params_array;
-	for (uint8_t i=0;i<4;i++,p++) {
+	for (uint8_t i = 0; i < OSC_CH_COUNT ; i++,p++) {
 		int8_t vol = (int8_t)p->vol;
 		if (!vol) {
 			/* skip if volume or phase increment is zero and save some cycles */
@@ -181,15 +119,6 @@ ISR(TIMER3_COMPA_vect)
 
 	if (!(--osc_int_count)) {
 		osc_int_count = OSC_ISR_PRESCALER_DIV;
-		const uint8_t tick0_due = --osc_cb[0].callback_prescaler_counter == 255;
-		const uint8_t tick1_due = --osc_cb[1].callback_prescaler_counter == 255;
-		if (tick0_due || tick1_due) {
-			if (!osc_isr_reenter) {
-				osc_isr_reenter = 1;
-				sei();
-				osc_tick_handler();
-				osc_isr_reenter = 0;
-			}
-		}
+		osc_tick_handler();
 	}
 }
