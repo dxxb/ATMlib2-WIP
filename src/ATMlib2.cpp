@@ -11,15 +11,15 @@ void ATMsynth::setup(void) {
 
 void ATMsynth::play(const uint8_t *score) {
 	setup();
-	atm_synth_play_score(score);
+	atm_synth_start_score(score);
 }
 
 // Stop playing, unload melody
 void ATMsynth::stop() {
-	atm_synth_stop_score();
+	atm_synth_set_score_paused(1);
 }
 
 // Start grinding samples or Pause playback
 void ATMsynth::playPause() {
-	atm_synth_set_score_paused(!atm_synth_get_score_paused());
+	atm_synth_set_score_paused(atm_synth_is_score_playing());
 }

@@ -9,9 +9,10 @@
 
 #define ARRAY_SIZE(a) (sizeof (a) / sizeof ((a)[0]))
 
-struct atm_synth_state atmlib_state;
+struct atm_libstate atmlib_state;
 
 #define ATMLIB_TICKRATE_MAX (255)
+#define ATMLIB_TICKRATE_DEFAULT (25)
 #define MAX_VOLUME (127)
 #define LAST_NOTE (63)
 const uint16_t noteTable[64] PROGMEM = {
@@ -29,11 +30,7 @@ static uint16_t note_index_2_phase_inc(const uint8_t note_idx)
 	return pgm_read_word(&noteTable[(note_idx) & 0x3F]);
 }
 
-struct atm_channel_state channels[OSC_CH_COUNT];
-
-static void atm_synth_score_tick_handler(uint8_t cb_index, void *priv);
-static void atm_synth_sfx_tick_handler(uint8_t cb_index, void *priv);
-static void atm_synth_ext_tick_handler(uint8_t cb_index, void *priv);
+//static void atm_synth_ext_tick_handler(uint8_t cb_index, void *priv);
 
 #define pattern_index(ch_ptr) ((ch_ptr)->pstack[(ch_ptr)->pstack_index].pattern_index)
 #define pattern_cmd_ptr(ch_ptr) ((ch_ptr)->pstack[(ch_ptr)->pstack_index].next_cmd_ptr)
@@ -106,9 +103,9 @@ static const uint8_t *get_entry_pattern_array_ptr(const uint8_t *score)
 	return hdr.f.fmt & 0x01 ? score + sizeof(uint16_t)*pattern_count + 3 : NULL;
 }
 
-static const uint8_t *get_track_start_ptr(struct atm_synth_state *score_state, const uint8_t track_index)
+static const uint8_t *get_track_start_ptr(const struct atm_player_state *player_state, const uint8_t track_index)
 {
-	const uint8_t *s = score_state->score_start;
+	const uint8_t *s = player_state->score_start;
 	union fmt_hdr hdr;
 
 	hdr.u16 = pgm_read_word(s);
@@ -121,15 +118,17 @@ static const uint8_t *get_track_start_ptr(struct atm_synth_state *score_state, c
 void atm_synth_setup(void)
 {
 	osc_setup();
+	osc_set_isr_active(1);
+	struct atm_score_state *score_state = &atmlib_state.score_state;
 	/* no channel is active */
-	atmlib_state.channel_active_mute = 0;
+	score_state->player_state.channel_active_mask = 0;
 	/* take over all oscillators */
-	for (unsigned n = 0; n < ARRAY_SIZE(channels); n++) {
-		channels[n].dst_osc_params = &osc_params_array[n];
+	for (unsigned n = 0; n < ARRAY_SIZE(score_state->channel_state); n++) {
+		score_state->channel_state[n].dst_osc_params = &osc_params_array[n];
 	}
 }
 
-static void atm_synth_init_channel(struct atm_channel_state *ch, struct osc_params *dst, struct atm_synth_state *player, uint8_t pattern_index)
+static void atm_synth_init_channel(struct atm_channel_state *ch, struct osc_params *dst, const struct atm_player_state *player, uint8_t pattern_index)
 {
 	memset(ch, 0, sizeof(*ch));
 #if ATM_HAS_FX_NOTE_RETRIG
@@ -144,126 +143,97 @@ static void atm_synth_init_channel(struct atm_channel_state *ch, struct osc_para
 	ch->pstack[0].pattern_index = pattern_index;
 }
 
-static void atm_player_init_state(const uint8_t *score, struct atm_synth_state *dst)
+static void atm_player_init_state(const uint8_t *score, struct atm_player_state *dst)
 {
 	dst->score_start = score;
-	dst->channel_active_mute |= 0b11110000;
-	dst->tick_rate = 25;
+	dst->tick_rate = OSC_TICKRATE/ATMLIB_TICKRATE_DEFAULT-1;
 }
 
 void atm_synth_grab_channel(const uint8_t channel_index, struct osc_params *save)
 {
 	*save = osc_params_array[channel_index];
 	memset(&osc_params_array[channel_index], 0, sizeof(osc_params_array[0]));
-	channels[channel_index].dst_osc_params = save;
+	atmlib_state.score_state.channel_state[channel_index].dst_osc_params = save;
 }
 
 void atm_synth_release_channel(const uint8_t channel_index)
 {
-	osc_params_array[channel_index] = *channels[channel_index].dst_osc_params;
-	channels[channel_index].dst_osc_params = &osc_params_array[channel_index];
+	struct atm_channel_state *channel = &atmlib_state.score_state.channel_state[channel_index];
+	osc_params_array[channel_index] = *channel->dst_osc_params;
+	channel->dst_osc_params = &osc_params_array[channel_index];
 }
 
-void atm_synth_play_sfx_track(const uint8_t ch_index, const uint8_t *sfx, struct atm_sfx_state *sfx_state)
+void atm_synth_play_sfx_track(const uint8_t ch_index, const uint8_t sfx_slot, const uint8_t *sfx)
 {
-	atm_synth_stop_sfx_track(sfx_state);
+	atm_synth_stop_sfx_track(sfx_slot);
+	struct atm_sfx_state *sfx_state = &atmlib_state.sfx_slot[sfx_slot];
 	sfx_state->ch_index = ch_index;
 	atm_synth_grab_channel(ch_index, &sfx_state->osc_params);
-	atm_player_init_state((const uint8_t*)sfx, &sfx_state->track_info);
-	/* override active flags so only one channel for is active for the SFX player */
-	sfx_state->track_info.channel_active_mute = 1 << (ch_index+OSC_CH_COUNT);
-	atm_synth_init_channel(&sfx_state->channel_state, &osc_params_array[ch_index], &sfx_state->track_info, 0);
-	osc_set_tick_rate(1, sfx_state->track_info.tick_rate);
+	atm_player_init_state((const uint8_t*)sfx, &sfx_state->player_state);
+	atm_synth_init_channel(sfx_state->channel_state, &osc_params_array[ch_index], &sfx_state->player_state, 0);
 	/* Start SFX */
-	osc_set_tick_callback(1, atm_synth_sfx_tick_handler, sfx_state);
+	/* override active flags so only one channel is active for the SFX player */
+	sfx_state->player_state.channel_active_mask = 1 << ch_index;
 }
 
-void atm_synth_stop_sfx_track(struct atm_sfx_state *sfx_state)
+void atm_synth_stop_sfx_track(const uint8_t sfx_slot)
 {
-	osc_set_tick_callback(1, NULL, NULL);
+	struct atm_sfx_state *sfx_state = &atmlib_state.sfx_slot[sfx_slot];
+	sfx_state->player_state.channel_active_mask = 0;
 	atm_synth_release_channel(sfx_state->ch_index);
 }
 
-// stop playing
-void atm_synth_stop_score(void) {
-	osc_set_tick_callback(0, NULL, NULL);
-}
-
-void atm_synth_play_score(const uint8_t *score)
+void atm_synth_start_score(const uint8_t *score)
 {
 	/* stop current score if any */
-	atm_synth_stop_score();
+	atm_synth_set_score_paused(1);
 	/* Set default score data */
-	atm_player_init_state(score, &atmlib_state);
-	osc_set_tick_rate(0, atmlib_state.tick_rate);
+	struct atm_score_state *score_state = &atmlib_state.score_state;
+	atm_player_init_state(score, &score_state->player_state);
 	/* Read track count */
 	const uint8_t *ep = get_entry_pattern_array_ptr(score);
 	/* Fetch starting points for each track */
-	for (unsigned n = 0; n < ARRAY_SIZE(channels); n++) {
-		atm_synth_init_channel(&channels[n],
-			channels[n].dst_osc_params, &atmlib_state, pgm_read_byte(&ep[n]));
+	for (unsigned n = 0; n < ARRAY_SIZE(score_state->channel_state); n++) {
+		atm_synth_init_channel(&score_state->channel_state[n],
+			score_state->channel_state[n].dst_osc_params, &score_state->player_state, pgm_read_byte(&ep[n]));
 	}
 	/* Start playback */
-	osc_set_tick_callback(0, atm_synth_score_tick_handler, NULL);
+	atm_synth_set_score_paused(0);
 }
 
 /* FIXME: the corresponding 'stop' function is missing */
 void atm_synth_play_ext(const struct atm_synth_ext *synth_ext)
 {
-	/* stop current score if any */
-	atm_synth_stop_score();
-	/* Set default score data */
-	atm_player_init_state(NULL, &atmlib_state);
-	osc_set_tick_rate(0, atmlib_state.tick_rate);
-	/* Read track count */
-	/* Fetch starting points for each track */
-	for (unsigned n = 0; n < ARRAY_SIZE(channels); n++) {
-		atm_synth_init_channel(&channels[n],
-			channels[n].dst_osc_params, &atmlib_state, 0);
-	}
-	/* Start playback */
-	osc_set_tick_callback(0, atm_synth_ext_tick_handler, synth_ext);
+	/* re-implement me! */
 }
 
-uint8_t atm_synth_is_score_stopped(void)
+uint8_t atm_synth_is_score_playing(void)
 {
-	return !(atmlib_state.channel_active_mute & 0xF0);
-}
-
-uint8_t atm_synth_get_score_paused(void)
-{
-	if (!(atmlib_state.channel_active_mute & 0xF0)) {
-		/* paused means it can resume */
-		return 0;
-	}
-	osc_tick_callback cb;
-	osc_get_tick_callback(0, &cb, NULL);
-	return cb == NULL;
+	return atmlib_state.score_state.player_state.channel_active_mask;
 }
 
 void atm_synth_set_score_paused(const uint8_t paused)
 {
-	if (!(atmlib_state.channel_active_mute & 0xF0)) {
-		/* if the score is not ready to play do nothing */
-		return;
-	}
-	for (unsigned n = 0; n < ARRAY_SIZE(channels); n++) {
-		if (paused) {
-			/* Volume for each channel should be saved here and restored upon unmute */
-			/* but we want to save memory so after unpausing the fist note or effect */
-			/* will update the volume again */
-			channels[n].dst_osc_params->vol = 0;
+	struct atm_score_state *score_state = &atmlib_state.score_state;
+	if (paused) {
+		atmlib_state.score_state.player_state.channel_active_mask = 0;
+		for (unsigned n = 0; n < ARRAY_SIZE(score_state->channel_state); n++) {
+				/* Volume for each channel should be saved here and restored upon unmute */
+				/* but we want to save memory so after unpausing the fist note or effect */
+				/* will update the volume again */
+				score_state->channel_state[n].dst_osc_params->vol = 0;
 		}
+	} else {
+		atmlib_state.score_state.player_state.channel_active_mask = ATM_SCORE_CH_MASK;
 	}
-	osc_set_tick_callback(0, paused ? NULL : atm_synth_score_tick_handler, NULL);
 }
 
 /* include source file directly so the compiler can inline static functions therein */
 #include "cmd_parse.c"
 
-static void process_fx(const uint8_t ch_index, struct atm_synth_state *score_state, struct atm_channel_state *ch)
+static void process_fx(struct atm_player_state *player_state, struct atm_channel_state *ch)
 {
-	(void)(score_state);
+	(void)(player_state);
 
 #if ATM_HAS_FX_GLISSANDO
 	//Apply Glissando
@@ -329,9 +299,9 @@ static void process_fx(const uint8_t ch_index, struct atm_synth_state *score_sta
 #endif
 }
 
-static void process_channel(const uint8_t ch_index, struct atm_synth_state *score_state, struct atm_channel_state *ch)
+static void process_channel(const uint8_t ch_index, struct atm_player_state *player_state, struct atm_channel_state *ch)
 {
-	process_fx(ch_index, score_state, ch);
+	process_fx(player_state, ch);
 
 	while (ch->delay == 0) {
 		struct atm_cmd_data cmd;
@@ -341,14 +311,16 @@ static void process_channel(const uint8_t ch_index, struct atm_synth_state *scor
 		maximum command size is 4 right now
 		*/
 		memcpy_P(&cmd, pattern_cmd_ptr(ch), sizeof(struct atm_cmd_data));
-		process_cmd(ch_index, &cmd, score_state, ch);
+		process_cmd(&cmd, player_state, ch);
 	}
 
 	if (ch->delay != 0xFFFF) {
 		ch->delay--;
+	} else {
+		player_state->channel_active_mask &= ~(1 << ch_index);
 	}
 }
-
+#if 0
 static void atm_synth_ext_tick_handler(uint8_t cb_index, void *priv) {
 	(void)(cb_index);
 	struct atm_synth_ext *ext = (struct atm_synth_ext *)priv;
@@ -360,50 +332,77 @@ static void atm_synth_ext_tick_handler(uint8_t cb_index, void *priv) {
 		osc_set_tick_rate(0, atmlib_state.tick_rate);
 	}
 }
+#endif
+static void atm_synth_sfx_tick_handler(void) {
 
-static void atm_synth_sfx_tick_handler(uint8_t cb_index, void *priv) {
-	(void)(cb_index);
-	struct atm_sfx_state *sfx_state = (struct atm_sfx_state *)priv;
+	for (int i = 0; i < ATM_SFX_SLOT_COUNT; i++) {
+		struct atm_sfx_state *sfx_state = &atmlib_state.sfx_slot[i];
+		if (!sfx_state->player_state.channel_active_mask) {
+			continue;
+		}
 
-	const uint8_t sfx_ch_index = sfx_state->ch_index;
-	process_channel(sfx_ch_index, &sfx_state->track_info, &sfx_state->channel_state);
-	osc_set_tick_rate(1, sfx_state->track_info.tick_rate);
-	if (!(sfx_state->track_info.channel_active_mute & 0xF0)) {
-		/* sfx done */
-		atm_synth_stop_sfx_track(sfx_state);
+		if (--sfx_state->player_state.tick_counter != 255) {
+			continue;
+		}
+		sfx_state->player_state.tick_counter = sfx_state->player_state.tick_rate;
+
+		const uint8_t sfx_ch_index = sfx_state->ch_index;
+		process_channel(sfx_ch_index, &sfx_state->player_state, sfx_state->channel_state);
+		if (!(sfx_state->player_state.channel_active_mask)) {
+			/* sfx done */
+			atm_synth_stop_sfx_track(i);
+		}
 	}
 }
 
-static void atm_synth_score_tick_handler(uint8_t cb_index, void *priv) {
-	(void)(cb_index);
-	(void)(priv);
+static void atm_synth_score_tick_handler(void) {
+
+	struct atm_player_state *p = &atmlib_state.score_state.player_state;
+	if (!p->channel_active_mask) {
+		return;
+	}
+
+	if (--p->tick_counter != 255) {
+		return;
+	}
+
+	p->tick_counter = p->tick_rate;
 
 start_loop:
 
 	// for every channel start working
-	for (uint8_t ch_index = 0; ch_index < ARRAY_SIZE(channels); ch_index++)
+	for (uint8_t ch_index = 0; ch_index < ARRAY_SIZE(atmlib_state.score_state.channel_state); ch_index++)
 	{
-		process_channel(ch_index, &atmlib_state, &channels[ch_index]);
-		osc_set_tick_rate(0, atmlib_state.tick_rate);
+		process_channel(ch_index, p, &atmlib_state.score_state.channel_state[ch_index]);
 	}
 
 	/* if all channels are inactive, stop playing or check for repeat */
-	if (!(atmlib_state.channel_active_mute & 0xF0)) {
+	if (!p->channel_active_mask) {
 #if ATM_HAS_FX_LOOP
-		for (uint8_t k = 0; k < ARRAY_SIZE(channels); k++) {
-			struct atm_channel_state *const ch = &channels[k];
+		for (uint8_t ch_index = 0; ch_index < ARRAY_SIZE(atmlib_state.score_state.channel_state); ch_index++) {
+			struct atm_channel_state *const ch = &atmlib_state.score_state.channel_state[ch_index];
 			/* a quirk in the original implementation does not allow to loop to pattern 0 */
 			if (ch->loop_pattern_index == 255) {
 				continue;
 			}
-			pattern_cmd_ptr(ch) = get_track_start_ptr(&atmlib_state, ch->loop_pattern_index);
+			pattern_cmd_ptr(ch) = get_track_start_ptr(p, ch->loop_pattern_index);
 			ch->delay = 0;
-			atmlib_state.channel_active_mute |= (1<<(k+OSC_CH_COUNT));
+			p->channel_active_mask |= (1<<ch_index);
 		}
-		if (atmlib_state.channel_active_mute & 0xF0) {
+		if (p->channel_active_mask) {
 			goto start_loop;
 		}
 #endif
-		atm_synth_stop_score();
 	}
+}
+
+void atmlib_tick_handler(void)
+{
+	atm_synth_score_tick_handler();
+	atm_synth_sfx_tick_handler();
+}
+
+__attribute__((weak)) void osc_tick_handler(void)
+{
+	atmlib_tick_handler();
 }

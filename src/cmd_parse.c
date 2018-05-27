@@ -42,7 +42,7 @@ trigger_both:
 	ch->dst_osc_params->mod = ch->mod;
 }
 
-static void process_immediate_cmd(const uint8_t ch_index, const uint8_t cmd_id, struct atm_synth_state *score_state, struct atm_channel_state *ch)
+static void process_immediate_cmd(const uint8_t cmd_id, struct atm_player_state *player_state, struct atm_channel_state *ch)
 {
 	const enum atm_immediate_cmd_constants cid = cmd_id;
 
@@ -57,7 +57,7 @@ static void process_immediate_cmd(const uint8_t ch_index, const uint8_t cmd_id, 
 			if (pattern_repetition_counter(ch) > 0) {
 				/* Repeat track */
 				pattern_repetition_counter(ch)--;
-				pattern_cmd_ptr(ch) = get_track_start_ptr(score_state, pattern_index(ch));
+				pattern_cmd_ptr(ch) = get_track_start_ptr(player_state, pattern_index(ch));
 			} else {
 				/* Check stack depth */
 				if (ch->pstack_index == 0) {
@@ -85,12 +85,11 @@ static void process_immediate_cmd(const uint8_t ch_index, const uint8_t cmd_id, 
 	return;
 
 stop_channel:
-	score_state->channel_active_mute = score_state->channel_active_mute ^ (1 << (ch_index + OSC_CH_COUNT));
 	ch->dst_osc_params->vol = 0;
 	ch->delay = 0xFFFF;
 }
 
-static void process_1p_cmd(const struct atm_cmd_data *cmd, struct atm_synth_state *score_state, struct atm_channel_state *ch)
+static void process_1p_cmd(const struct atm_cmd_data *cmd, struct atm_player_state *player_state, struct atm_channel_state *ch)
 {
 	const enum atm_single_byte_cmd_id_constants cid = cmd->id;
 
@@ -104,11 +103,14 @@ static void process_1p_cmd(const struct atm_cmd_data *cmd, struct atm_synth_stat
 			break;
 
 		case ATM_CMD_1P_SET_TEMPO:
-			score_state->tick_rate = cmd->params[0];
+			player_state->tick_rate = OSC_TICKRATE/cmd->params[0]-1;
 			break;
 
 		case ATM_CMD_1P_ADD_TEMPO:
-			score_state->tick_rate += (int8_t)cmd->params[0];
+			{
+				const uint8_t rate_hz = (OSC_TICKRATE/(player_state->tick_rate+1));
+				player_state->tick_rate = OSC_TICKRATE/(rate_hz+(int8_t)cmd->params[0])-1;
+			}
 			break;
 
 		case ATM_CMD_1P_SET_VOLUME:
@@ -133,7 +135,7 @@ static void process_1p_cmd(const struct atm_cmd_data *cmd, struct atm_synth_stat
 	}
 }
 
-static void process_np_cmd(const struct atm_cmd_data *cmd, const uint8_t csz, struct atm_synth_state *score_state, struct atm_channel_state *ch)
+static void process_np_cmd(const struct atm_cmd_data *cmd, const uint8_t csz, struct atm_player_state *player_state, struct atm_channel_state *ch)
 {
 	const enum atm_parametrised_cmd_id_constants cid = cmd->id & 0x0F;
 
@@ -149,7 +151,7 @@ static void process_np_cmd(const struct atm_cmd_data *cmd, const uint8_t csz, st
 					ch->pstack_index++;
 					pattern_index(ch) = new_track;
 					pattern_repetition_counter(ch) = new_counter;
-					pattern_cmd_ptr(ch) = get_track_start_ptr(score_state, pattern_index(ch));
+					pattern_cmd_ptr(ch) = get_track_start_ptr(player_state, pattern_index(ch));
 				}
 			}
 			/* if the stack is full and we cannot call, skip the call command */
@@ -223,7 +225,7 @@ static void process_np_cmd(const struct atm_cmd_data *cmd, const uint8_t csz, st
 	}
 }
 
-static void process_cmd(const uint8_t ch_index, const struct atm_cmd_data *cmd, struct atm_synth_state *score_state, struct atm_channel_state *ch)
+static void process_cmd(const struct atm_cmd_data *cmd, struct atm_player_state *player_state, struct atm_channel_state *ch)
 {
 	const uint8_t **next_cmd_ptr = &pattern_cmd_ptr(ch);
 	*next_cmd_ptr += 1;
@@ -245,22 +247,23 @@ static void process_cmd(const uint8_t ch_index, const struct atm_cmd_data *cmd, 
 	} else if (cmd->id < ATM_CMD_BLK_1_PARAMETER) {
 		/* immediate */
 		/* process_immediate_cmd() can modify next_cmd_ptr so increase it first */
-		process_immediate_cmd(ch_index, cmd->id, score_state, ch);
+		process_immediate_cmd(cmd->id, player_state, ch);
 	} else if (cmd->id < ATM_CMD_BLK_N_PARAMETER) {
 		/* 1 parameter byte command */
 		*next_cmd_ptr += 1;
-		process_1p_cmd(cmd, score_state, ch);
+		process_1p_cmd(cmd, player_state, ch);
 	} else {
 		const uint8_t csz = ((cmd->id >> 4) & 0x07) + 1;
 		/* n parameter byte command */
 		*next_cmd_ptr += csz;
 		/* process_np_cmd() can modify next_cmd_ptr so increase it first */
-		process_np_cmd(cmd, csz, score_state, ch);
+		process_np_cmd(cmd, csz, player_state, ch);
 	}
 }
-
-void ext_synth_command(const uint8_t ch_index, const struct atm_cmd_data *cmd, struct atm_synth_state *score_state, struct atm_channel_state *ch)
+#if 0
+void ext_synth_command(const uint8_t ch_index, const struct atm_cmd_data *cmd, struct atm_player_state *player_state, struct atm_channel_state *ch)
 {
-	process_cmd(ch_index, cmd, score_state, ch);
+	process_cmd(ch_index, cmd, player_state, ch);
 }
+#endif
 #endif

@@ -1,5 +1,5 @@
 #include <Arduboy2.h>
-#include <ATMlib.2h>
+#include <ATMlib2.h>
 
 #include "atm_cmd_constants.h"
 
@@ -413,7 +413,7 @@ void loop() {
   }
 
   if (arduboy.justPressed(B_BUTTON)) {
-    atm_synth_play_sfx_track(OSC_CH_ONE, (const uint8_t*)tests[selected_test_idx].sfx_data, &sfx_state);
+    atm_synth_play_sfx_track(OSC_CH_1, 1, (const uint8_t*)tests[selected_test_idx].sfx_data);
   }
 
   if (arduboy.justPressed(A_BUTTON)) {
