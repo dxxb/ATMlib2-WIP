@@ -330,7 +330,8 @@ static void atm_synth_ext_tick_handler(uint8_t cb_index, void *priv) {
 	}
 }
 #endif
-static void atm_synth_sfx_tick_handler(void) {
+static void atm_synth_sfx_tick_handler(void)
+{
 
 	for (int i = 0; i < ATM_SFX_SLOT_COUNT; i++) {
 		struct atm_sfx_state *sfx_state = &atmlib_state.sfx_slot[i];
@@ -352,7 +353,8 @@ static void atm_synth_sfx_tick_handler(void) {
 	}
 }
 
-static void atm_synth_score_tick_handler(void) {
+static void atm_synth_score_tick_handler(void)
+{
 
 	struct atm_player_state *p = &atmlib_state.score_state.player_state;
 	if (!p->channel_active_mask) {
@@ -368,8 +370,7 @@ static void atm_synth_score_tick_handler(void) {
 start_loop:
 
 	// for every channel start working
-	for (uint8_t ch_index = 0; ch_index < ARRAY_SIZE(atmlib_state.score_state.channel_state); ch_index++)
-	{
+	for (uint8_t ch_index = 0; ch_index < ARRAY_SIZE(atmlib_state.score_state.channel_state); ch_index++) {
 		process_channel(ch_index, p, &atmlib_state.score_state.channel_state[ch_index]);
 	}
 
