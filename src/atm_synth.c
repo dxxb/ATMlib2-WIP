@@ -383,7 +383,7 @@ start_loop:
 			if (ch->loop_pattern_index == 255) {
 				continue;
 			}
-			pattern_cmd_ptr(ch) = get_track_start_ptr(p, ch->loop_pattern_index);
+			/* restart channel */
 			ch->delay = 0;
 			p->channel_active_mask |= (1<<ch_index);
 		}
