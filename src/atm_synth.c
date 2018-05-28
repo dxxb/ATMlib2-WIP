@@ -58,16 +58,13 @@ static uint16_t slide_quantity(int8_t amount, int16_t value, int16_t bottom, int
 #if ATM_HAS_FX_SLIDE || ATM_HAS_FX_LFO
 static void addto_osc_param(const int8_t amount, const uint8_t param, struct osc_params *osc_params, const uint8_t flags)
 {
-	switch (param & 0xC0) {
-		case 0:
-			osc_params->vol = slide_quantity(amount, osc_params->vol, 0, MAX_VOLUME, flags);
-			break;
-		case 0x40:
-			osc_params->phase_increment = (osc_params->phase_increment & 0x8000) | slide_quantity(amount, osc_params->phase_increment & OSC_PHASE_INC_MAX, 0, OSC_PHASE_INC_MAX, flags);
-			break;
-		case 0x80:
-			osc_params->mod = slide_quantity(amount, osc_params->mod, 0, OSC_MOD_MAX, flags);
-			break;
+	const uint8_t v = param & 0xC0;
+	if (!v) {
+		osc_params->vol = slide_quantity(amount, osc_params->vol, 0, MAX_VOLUME, flags);
+	} else if (v == 0x40) {
+		osc_params->phase_increment = (osc_params->phase_increment & 0x8000) | slide_quantity(amount, osc_params->phase_increment & OSC_PHASE_INC_MAX, 0, OSC_PHASE_INC_MAX, flags);
+	} else if (v == 0xC0 ) {
+		osc_params->mod = slide_quantity(amount, osc_params->mod, 0, OSC_MOD_MAX, flags);
 	}
 }
 #endif
