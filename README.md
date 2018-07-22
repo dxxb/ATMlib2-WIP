@@ -192,7 +192,7 @@ This chunk is present if flag ```c``` is set in the common header.
 | Offset | Size              | Name
 |--------|-------------------|--------------
 | 0      | 1                 | Channel count
-| 1      | 2*[pattern count] | Entry patterns
+| 1      | [channel count]   | Entry patterns
 
 ```
 0b------cc   : channel count, c: number of channels
