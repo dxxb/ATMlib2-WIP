@@ -1,4 +1,6 @@
 
+#include <stdint.h>
+
 #ifndef ATM_CMD_CONSTANTS_H
 #define ATM_CMD_CONSTANTS_H
 
