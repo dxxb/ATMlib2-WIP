@@ -109,7 +109,7 @@ static const uint8_t *get_track_start_ptr(const struct atm_player_state *player_
 	if (hdr.f.fmt & 0x02) {
 		return s + pgm_read_word(s+2+sizeof(uint16_t)*track_index);
 	}
-	return hdr.f.fmt & 0x01 ? s+1+pgm_read_byte(hdr.f.data) : s+1;
+	return hdr.f.fmt & 0x01 ? s+1+hdr.f.data : s+1;
 }
 
 void atm_synth_setup(void)
