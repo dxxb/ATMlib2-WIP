@@ -29,39 +29,42 @@
 
 static void osc_reset(void);
 
-static uint8_t osc_isr_reenter = 0;
 static uint8_t osc_int_count;
-struct osc_params osc_params_array[OSC_CH_COUNT];
-static uint16_t osc_pha_acc_array[OSC_CH_COUNT];
+uint8_t osc_gain;
+struct osc_state osc_state_array[OSC_CH_COUNT];
+
 
 void osc_setup(void)
 {
 	osc_reset();
 	/* PWM setup using timer 4 */
-	PLLFRQ = 0b01011010;    /* PINMUX:16MHz XTAL, PLLUSB:48MHz, PLLTM:1, PDIV:96MHz */
+	/* PINMUX:16MHz XTAL, PLLUSB:48MHz, PLLTM:1, PDIV:96MHz */
+	PLLFRQ = 0b01011010;
 	PLLCSR = 0b00010010;
 	/* Wait for PLL lock */
 	while (!(PLLCSR & 0x01)) {}
-	TCCR4A = 0b01000010;    /* PWM mode */
+	/* PWM mode */
+	TCCR4A = 0b01000010;
 	/* TCCR4B will be se to 0b00000001 for clock source/1, 96MHz/(OCR4C+1)/2 ~ 95703Hz */
-	TCCR4D = 0b00000001;    /* Dual Slope PWM (the /2 in the eqn. above is because of dual slope PWM) */
-	TCCR4E = 0b01000000;    /* Enhanced mode (bit 0 in OCR4C selects clock edge) */
+	/* Dual Slope PWM (the /2 in the eqn. above is because of dual slope PWM) */
+	TCCR4D = 0b00000001;
+	/* Enhanced mode (bit 0 in OCR4C selects clock edge) */
+	TCCR4E = 0b01000000;
 	TC4H   = OSC_HI(OSC_PWM_TOP);
-	OCR4C  = OSC_LO(OSC_PWM_TOP); /* Use 9-bits for counting (TOP=0x1FF) */
+	OCR4C  = OSC_LO(OSC_PWM_TOP);
 
 	TCCR3A = 0b00000000;
-	TCCR3B = 0b00001001;    /* Mode CTC, clock source 16MHz */
-	OCR3A  = (16E6/OSC_SAMPLERATE)-1; /* 16MHz/1k = 16kHz */
+	/* Mode CTC, clock source 16MHz */
+	TCCR3B = 0b00001001;
+	/* 16MHz/1k = 16kHz */
+	OCR3A  = (16E6/OSC_SAMPLERATE)-1;
 }
 
 static void osc_reset(void)
 {
 	osc_set_isr_active(0);
-	memset(osc_params_array, 0, sizeof(osc_params_array));
-	for (uint8_t i = 0; i < OSC_CH_COUNT; i++) {
-		/* set modulation to 50% duty cycle */
-		osc_params_array[i].mod = 0x7F;
-	}
+	osc_gain = 1;
+	memset(osc_state_array, 0, sizeof(osc_state_array));
 }
 
 void osc_set_isr_active(const uint8_t active_flag)
@@ -79,40 +82,35 @@ void osc_set_isr_active(const uint8_t active_flag)
 
 ISR(TIMER3_COMPA_vect)
 {
-	uint16_t pcm = OSC_DC_OFFSET;
-	struct osc_params *p = osc_params_array;
-	for (uint8_t i = 0; i < OSC_CH_COUNT ; i++,p++) {
-		int8_t vol = (int8_t)p->vol;
+	int16_t pcm = 0;
+	for (uint8_t i = 0; i < OSC_CH_COUNT ; i++) {
+		struct osc_state *const s = &osc_state_array[i];
+		int8_t vol = (int8_t)s->params.vol;
 		if (!vol) {
-			/* skip if volume or phase increment is zero and save some cycles */
-			continue;
-		}
-		const uint16_t phi = p->phase_increment;
-		if (!(phi & 0x7FFF)) {
-			/* skip if volume or phase increment is zero and save some cycles */
+			/* skip if volume is zero and save some cycles */
 			continue;
 		}
 		{
-			uint16_t pha = osc_pha_acc_array[i];
-			if (OSC_HI(phi) & 0x80) {
-				// TODO: try moving seeding from the ISR to where the waveform is selected
-				pha = pha ? pha : 0x0001; // Seed LFSR
-				const uint8_t msb = OSC_HI(pha) & 0x80;
-				pha += pha;
-				if (msb) {
-					// TODO: make sure this compiles to a sngle XOR operation on the lower 8 bits
-					pha ^= 0x002D;
+			const union osc_u16 phi = s->params.phase_inc;
+			union osc_u16 pha = s->phase_acc;
+			if (phi.u8.hi & 0x80) {
+				pha.u16 += pha.u16;
+				if (pha.u8.hi & 0x80) {
+					pha.u8.lo ^= 0x2D;
 				} else {
 					vol = -vol;
 				}
 			} else {
-				pha += phi;
-				vol = (OSC_HI(pha) > p->mod) ? vol : -vol;
+				pha.u16 += phi.u16;
+				vol = ((int8_t)pha.u8.hi > s->params.mod) ? vol : -vol;
 			}
-			osc_pha_acc_array[i] = pha;
+			s->phase_acc = pha;
 			pcm += vol;
 		}
 	}
+
+	pcm *= osc_gain;
+	pcm += OSC_DC_OFFSET;
 
 	TC4H = OSC_HI(pcm);
 	OCR4A = OSC_LO(pcm);
