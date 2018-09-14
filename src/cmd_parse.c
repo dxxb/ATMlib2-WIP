@@ -159,10 +159,10 @@ static void process_np_cmd(struct atm_player_state *const p, struct atm_voice_st
 		}
 #endif /* ATM_HAS_FX_LFO */
 	} else if (cid == (ATM_CMD_NP_ADD_TO_PARAM<<4)) {
-		atm_log_event("atm.player.%hhu.voice.%hhu.cmd.add.%s", "%hhd", atm_current_player_index(), atm_current_voice_index(), atm_log_fx_dest_label(cmd->params[0]), cmd->params[1]);
+		atm_log_event("atm.player.%hhu.voice.%hhu.cmd.add.%s", "%hhd f", atm_current_player_index(), atm_current_voice_index(), atm_log_fx_dest_label(cmd->params[0]), cmd->params[1]);
 		v->note_state->params[fx_target_param] += (int8_t)cmd->params[1];
 	} else if (cid == (ATM_CMD_NP_SET_PARAM<<4)) {
-		atm_log_event("atm.player.%hhu.voice.%hhu.cmd.set.%s", "%hhd", atm_current_player_index(), atm_current_voice_index(), atm_log_fx_dest_label(cmd->params[0]), cmd->params[1]);
+		atm_log_event("atm.player.%hhu.voice.%hhu.cmd.set.%s", "%hhd f", atm_current_player_index(), atm_current_voice_index(), atm_log_fx_dest_label(cmd->params[0]), cmd->params[1]);
 		v->note_state->params[fx_target_param] = cmd->params[1];
 	} else if (cid == (ATM_CMD_NP_SET_TEMPO<<4)) {
 		p->tick_rate = cmd->params[0];
