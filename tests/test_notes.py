@@ -11,8 +11,7 @@ def write_score_file(dst_path, score_bytes):
 
 
 def run_test_synth(score_path):
-	res = subprocess.check_output('./test_synth {}'.format(score_path), stderr=subprocess.STDOUT, shell=True)
-	return res.decode().splitlines()
+	return subprocess.check_output('./test_synth {}'.format(score_path), stderr=subprocess.STDOUT, shell=True)
 
 
 def group_trace_values(lines):
@@ -34,7 +33,9 @@ def trace_for_score(self, test_id_str, score_dict):
 	score = atmlib_score.score_from_dict(score_dict)
 	write_score_file(dst_path, score.score_bytes())
 	output = run_test_synth(dst_path)
-	return group_trace_values(output)
+	with open(str(test_id_str)+'.trace', 'wb+') as f:
+		f.write(output)
+	return group_trace_values(output.decode().splitlines())
 
 
 def assert_expected_traces(traces, expected_values):
@@ -282,8 +283,23 @@ class TestArpeggioFX(unittest.TestCase):
 	# test 2 notes arpeggio
 	# test 3 notes arpeggio
 	# test note cut
+	def test_notecut(self):
+		"""Test notecut with minimal interval"""
+		traces = trace_for_score(self, self.id(), {
+			'voice_count': 1,
+			'patterns': [
+				atmlib_score.concat_bytes(
+					atmlib_score.set_tempo(1),
+					atmlib_score.set_param(0, 127),
+					atmlib_score.slide(0, -8),
+					atmlib_score.notecut(1),
+					atmlib_score.note(1),
+					atmlib_score.delay(8),
+					atmlib_score.end_pattern(),
+				),
+			]
+		})
 	# test 1 tick arpeggio
 	# test auto retrigger
 	# test hold
 	# test triggering of other FX
-	pass

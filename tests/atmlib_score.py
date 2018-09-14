@@ -3,18 +3,6 @@ import struct
 from itertools import chain, accumulate
 
 
-def set_volume(v):
-	return struct.pack('B', v)
-
-
-def slide_volume(a, retriggered=True):
-	return struct.pack('b', a)
-
-
-def set_tempo(t):
-	return struct.pack('b', t)
-
-
 class CMDS:
 	NOP = 0
 	CALL = 1
@@ -56,10 +44,11 @@ def end_pattern():
 
 
 def slide(param_id, amount_per_interval, interval_ticks=1):
+	assert interval_ticks >= 1
 	if interval_ticks == 1:
 		return struct.pack('BBb', mkcmd(CMDS.SLIDE, 2), param_id, amount_per_interval)
 	else:
-		return struct.pack('BBbB', mkcmd(CMDS.SLIDE, 3), param_id, amount_per_interval, interval_ticks)
+		return struct.pack('BBbB', mkcmd(CMDS.SLIDE, 3), param_id, amount_per_interval, interval_ticks-1)
 
 
 def limited_slide(param_id, amount_per_tick, limit):
@@ -68,6 +57,11 @@ def limited_slide(param_id, amount_per_tick, limit):
 
 def lfo(param_id, depth, rate):
 	return struct.pack('BBBB', mkcmd(CMDS.LFO, 3), param_id, depth, rate)
+
+
+def notecut(interval_ticks):
+	assert interval_ticks >= 1
+	return struct.pack('BB', mkcmd(CMDS.ARPEGGIO, 1), 0x40 | ((interval_ticks-1) & 0x1F))
 
 
 def set_param(param_id, value):
