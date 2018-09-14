@@ -154,7 +154,7 @@ enum atm_parametrised_cmd_constants {
 #define ATM_CMD_M_CALL_REPEAT(pattern_index, repeat_count) ATM_CMD_P_CALL, (((repeat_count-1) << 5) | pattern_index)
 
 #define ATM_CMD_M_ARPEGGIO_ON(flags, notes) ATM_CMD_P_ARPEGGIO_ON, (flags), (notes)
-#define ATM_CMD_M_NOTECUT_ON(flags) ATM_CMD_P_NOTECUT_ON, ((flags) | 0x40)
+#define ATM_CMD_M_NOTECUT_ON(flags) ATM_CMD_P_NOTECUT_ON, ((flags) | 0x20)
 
 #define ATM_CMD_M_SLIDE_ON(flags, amount_per_tick) ATM_CMD_P_SLIDE_ON, (flags), (uint8_t)(amount_per_tick)
 #define ATM_CMD_M_SLIDE_ON_ADV(flags, amount_per_interval, interval) ATM_CMD_P_SLIDE_ADV_ON , (flags), (uint8_t)(amount_per_interval), (uint8_t)(interval)
