@@ -333,10 +333,10 @@ static void process_voice_fx(struct fx_processing_state *const s, struct fx_comm
 		c->count = 0;
 	}
 
-	const uint8_t update_due = c->count == c->interval;
+	const uint8_t update_due = c->count > c->interval;
 	if (update_due) {
 		atm_log_event("atm.player.%hhu.voice.%hhu.fx.%s.%s.update", "e", atm_current_player_index(), atm_current_voice_index(), atm_log_cmd_label(c->id), atm_log_fx_dest_label(c->id>>6));
-		c->count = 0;
+		c->count = 1;
 	} else {
 		atm_log_event("atm.player.%hhu.voice.%hhu.fx.%s.%s.apply", "e", atm_current_player_index(), atm_current_voice_index(), atm_log_cmd_label(c->id), atm_log_fx_dest_label(c->id>>6));
 		c->count++;
@@ -344,7 +344,7 @@ static void process_voice_fx(struct fx_processing_state *const s, struct fx_comm
 
 	dispatch_voice_fx(s, c, triggered, update_due);
 
-	if ((c->flags & FX_COMMON_FLAGS_TRIGGERS_TRANSPOSITION_MASK) && (c->count == c->interval)) {
+	if ((c->flags & FX_COMMON_FLAGS_TRIGGERS_TRANSPOSITION_MASK) && (c->count > c->interval)) {
 		atm_log_event("atm.player.%hhu.voice.%hhu.fx.%s.%s.triggers", "e", atm_current_player_index(), atm_current_voice_index(), atm_log_cmd_label(c->id), atm_log_fx_dest_label(c->id>>6));
 		s->note_flags |= FX_COMMON_FLAGS_RETRIGGER_ON_TRANSPOSITION_MASK;
 	}
