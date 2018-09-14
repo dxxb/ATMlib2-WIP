@@ -271,6 +271,7 @@ static void apply_arpeggio_fx(struct fx_processing_state *const s, struct fx_com
 				/* auto re-trigger or note trigger? */
 				const uint8_t note_retrigger = fx->common.flags & FX_COMMON_FLAGS_RETRIGGER_ON_NOTEON_MASK;
 				if (note_retrigger) {
+					atm_log_event("atm.player.%hhu.voice.%hhu.fx.arp.hold", "e", atm_current_player_index(), atm_current_voice_index());
 					goto arp_hold;
 				}
 				fx->state = 0x00;
@@ -322,30 +323,30 @@ static void process_voice_fx(struct fx_processing_state *const s, struct fx_comm
 {
 	/* skip if note is off and FX requires note to be on */
 	if ((c->flags & FX_COMMON_FLAGS_SKIP_ON_NOTEOFF_MASK) && !s->note) {
-		atm_log_event("atm.player.%hhu.voice.%hhu.fx.%s.%s.skip", "e", atm_current_player_index(), atm_current_voice_index(), atm_log_cmd_label(c->id), atm_log_fx_dest_label(c->id>>6));
+		atm_log_event("atm.player.%hhu.voice.%hhu.fx.%s.%s.skip", "e", atm_current_player_index(), atm_current_voice_index(), atm_log_cmd_label(c->id >> 4), atm_log_fx_dest_label(c->id));
 		return;
 	}
 
 	/* figure out if we should re-trigger */
 	const uint8_t triggered = (c->flags & FX_COMMON_FLAGS_RETRIGGER_ON_ANY_MASK) & s->triggered_flags;
 	if (triggered) {
-		atm_log_event("atm.player.%hhu.voice.%hhu.fx.%s.%s.triggered", "e", atm_current_player_index(), atm_current_voice_index(), atm_log_cmd_label(c->id), atm_log_fx_dest_label(c->id>>6));
+		atm_log_event("atm.player.%hhu.voice.%hhu.fx.%s.%s.triggered", "e", atm_current_player_index(), atm_current_voice_index(), atm_log_cmd_label(c->id >> 4), atm_log_fx_dest_label(c->id));
 		c->count = 0;
 	}
 
 	const uint8_t update_due = c->count > c->interval;
 	if (update_due) {
-		atm_log_event("atm.player.%hhu.voice.%hhu.fx.%s.%s.update", "e", atm_current_player_index(), atm_current_voice_index(), atm_log_cmd_label(c->id), atm_log_fx_dest_label(c->id>>6));
+		atm_log_event("atm.player.%hhu.voice.%hhu.fx.%s.%s.update", "e", atm_current_player_index(), atm_current_voice_index(), atm_log_cmd_label(c->id >> 4), atm_log_fx_dest_label(c->id));
 		c->count = 1;
 	} else {
-		atm_log_event("atm.player.%hhu.voice.%hhu.fx.%s.%s.apply", "e", atm_current_player_index(), atm_current_voice_index(), atm_log_cmd_label(c->id), atm_log_fx_dest_label(c->id>>6));
+		atm_log_event("atm.player.%hhu.voice.%hhu.fx.%s.%s.apply", "e", atm_current_player_index(), atm_current_voice_index(), atm_log_cmd_label(c->id >> 4), atm_log_fx_dest_label(c->id));
 		c->count++;
 	}
 
 	dispatch_voice_fx(s, c, triggered, update_due);
 
 	if ((c->flags & FX_COMMON_FLAGS_TRIGGERS_TRANSPOSITION_MASK) && (c->count > c->interval)) {
-		atm_log_event("atm.player.%hhu.voice.%hhu.fx.%s.%s.triggers", "e", atm_current_player_index(), atm_current_voice_index(), atm_log_cmd_label(c->id), atm_log_fx_dest_label(c->id>>6));
+		atm_log_event("atm.player.%hhu.voice.%hhu.fx.%s.%s.triggers", "e", atm_current_player_index(), atm_current_voice_index(), atm_log_cmd_label(c->id >> 4), atm_log_fx_dest_label(c->id));
 		s->note_flags |= FX_COMMON_FLAGS_RETRIGGER_ON_TRANSPOSITION_MASK;
 	}
 }
@@ -404,6 +405,8 @@ static struct osc_params apply_voice_effects(const struct atm_player_state *cons
 	} else {
 		/* WARN: other fields are unintialized. This is not an issue because volume is zero. */
 		osc_params.vol = 0;
+		//osc_params.mod = 0;
+		//osc_params.phase_inc.u16 = 0;
 	}
 	return osc_params;
 }
