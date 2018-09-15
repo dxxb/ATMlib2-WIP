@@ -15,6 +15,14 @@
 #include "atm_pool.h"
 #include "atm_log.h"
 
+/* Reduce progmem used by note table
+
+	Instead of storing all 64 notes (64*2 bytes) store just the last 12
+	with highest frequency (the ones with highest information content in
+	terms of significant bits) and use a 'multiply by constant' techinique
+	to find which frequency to use for a given note.
+*/
+
 const uint16_t noteTable[12] PROGMEM = {
 	OSC_FREQ_TO_PHI(1975.53f), // B6
 	OSC_FREQ_TO_PHI(2093.00f), // C7
