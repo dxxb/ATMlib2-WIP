@@ -227,12 +227,14 @@ static void apply_slide_fx(struct fx_processing_state *const s, struct fx_common
 
 	const uint8_t param = fx->common.flags & FX_COMMON_FLAGS_DESTINATION_PARAM_MASK;
 	if (update_due) {
-		atm_log_event("atm.player.%hhu.voice.%hhu.fx.slide.%s", "%hhd f", atm_current_player_index(), atm_current_voice_index(), atm_log_fx_dest_label(param), fx->acc_amount);
-		const int16_t tmp = (int16_t)fx->acc_amount + fx->amount;
+		const int16_t tmp = fx->acc_amount + fx->amount;
 		fx->acc_amount = tmp;
 		if ((fx->target > 0 && tmp > fx->target) || (fx->target < 0 && tmp < fx->target)) {
 			fx->acc_amount = fx->target;
+			atm_log_event("atm.player.%hhu.voice.%hhu.fx.slide.%s.clamp", "%hhd f", atm_current_player_index(), atm_current_voice_index(), atm_log_fx_dest_label(param), fx->acc_amount);
 		}
+		atm_log_event("atm.player.%hhu.voice.%hhu.fx.slide.%s", "%hhd f", atm_current_player_index(), atm_current_voice_index(), atm_log_fx_dest_label(param), fx->acc_amount);
+		atm_log_event("atm.player.%hhu.voice.%hhu.fx.slide.%s.target", "%hhd f", atm_current_player_index(), atm_current_voice_index(), atm_log_fx_dest_label(param), fx->target);
 	}
 	apply_fx_param_delta(s->acc_fx_param, param, fx->acc_amount);
 }

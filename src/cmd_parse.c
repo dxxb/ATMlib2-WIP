@@ -137,7 +137,9 @@ static void process_np_cmd(struct atm_player_state *const p, struct atm_voice_st
 		const uint8_t id = fx_target_param | cid;
 		struct atm_fx_slide_slot *fx = handle_fx_storage(v, id, sizeof(struct atm_fx_slide_slot), csz);
 		if (fx) {
+			atm_log_event("atm.player.%hhu.voice.%hhu.fx.slide.add", "e", atm_current_player_index(), atm_current_voice_index());
 			fx->common.flags = cmd->params[0];
+			fx->amount = (int8_t)cmd->params[1];
 			if (csz > 2) {
 				if (cmd->params[0] & FX_SLIDE_LIMIT_FLAG_MASK) {
 					fx->target = (int8_t)cmd->params[2];
@@ -147,7 +149,10 @@ static void process_np_cmd(struct atm_player_state *const p, struct atm_voice_st
 			} else {
 				fx->target = fx->amount > 0 ? MAX_VOLUME : -MAX_VOLUME;
 			}
-			fx->amount = (int8_t)cmd->params[1];
+			atm_log_event("atm.player.%hhu.voice.%hhu.fx.slide.amount", "%hhd f", atm_current_player_index(), atm_current_voice_index(), fx->amount);
+			atm_log_event("atm.player.%hhu.voice.%hhu.fx.slide.target", "%hhd f", atm_current_player_index(), atm_current_voice_index(), fx->target);
+			atm_log_event("atm.player.%hhu.voice.%hhu.fx.slide.interval", "%hhd f", atm_current_player_index(), atm_current_voice_index(), fx->common.interval);
+			atm_log_event("atm.player.%hhu.voice.%hhu.fx.slide.flags", "%hhd f", atm_current_player_index(), atm_current_voice_index(), fx->common.flags);
 		}
 #endif /* ATM_HAS_FX_SLIDE */
 	} else if (cid == (ATM_CMD_NP_LFO<<4)) {

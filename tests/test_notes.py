@@ -165,7 +165,87 @@ class TestSlideFX(unittest.TestCase):
 	# limited slide up
 	# limited slide down
 	# test re-triggering behaviour
-	pass
+	def test_slide_down(self):
+		"""test slide down"""
+		traces = trace_for_score(self, self.id(), {
+			'voice_count': 1,
+			'patterns': [
+				atmlib_score.concat_bytes(
+					atmlib_score.set_tempo(1),
+					atmlib_score.set_param(0, 127),
+					atmlib_score.slide(0, -8),
+					atmlib_score.note(1),
+					atmlib_score.delay(20),
+					atmlib_score.end_pattern(),
+				),
+			]
+		})
+		expected_values = [
+			(1000000, -8),
+			(2000000, -16),
+			(3000000, -24),
+			(4000000, -32),
+			(5000000, -40),
+			(6000000, -48),
+			(7000000, -56),
+			(8000000, -64),
+			(9000000, -72),
+			(10000000, -80),
+			(11000000, -88),
+			(12000000, -96),
+			(13000000, -104),
+			(14000000, -112),
+			(15000000, -120),
+			(16000000, -127),
+			(17000000, -127),
+			(18000000, -127),
+			(19000000, -127),
+		]
+		assert_expected_traces(traces, {
+			'atm.player.0.voice.0.fx.slide.vol': expected_values,
+			'osc.channels.0.vol': [(0, 127)]+[(tm, 127+val) for tm, val in expected_values],
+		})
+
+	def test_slide_up(self):
+		"""test slide up"""
+		traces = trace_for_score(self, self.id(), {
+			'voice_count': 1,
+			'patterns': [
+				atmlib_score.concat_bytes(
+					atmlib_score.set_tempo(1),
+					atmlib_score.set_param(0, 0),
+					atmlib_score.slide(0, 8),
+					atmlib_score.note(1),
+					atmlib_score.delay(20),
+					atmlib_score.end_pattern(),
+				),
+			]
+		})
+		expected_values = [
+			(1000000, 8),
+			(2000000, 16),
+			(3000000, 24),
+			(4000000, 32),
+			(5000000, 40),
+			(6000000, 48),
+			(7000000, 56),
+			(8000000, 64),
+			(9000000, 72),
+			(10000000, 80),
+			(11000000, 88),
+			(12000000, 96),
+			(13000000, 104),
+			(14000000, 112),
+			(15000000, 120),
+			(16000000, 127),
+			(17000000, 127),
+			(18000000, 127),
+			(19000000, 127),
+		]
+		assert_expected_traces(traces, {
+			'atm.player.0.voice.0.fx.slide.vol': expected_values,
+			'osc.channels.0.vol': [(0, 0)]+expected_values,
+		})
 
 
 class TestLFOFX(unittest.TestCase):
