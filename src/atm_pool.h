@@ -36,3 +36,6 @@ struct atm_pool_slot *atm_pool_idx2slot_ptr(atm_pool_slot_idx_t slot);
 void *atm_pool_idx2data_ptr(atm_pool_slot_idx_t slot);
 atm_pool_slot_idx_t atm_pool_slot_ptr2idx(const struct atm_pool_slot *const ptr);
 atm_pool_slot_idx_t atm_pool_slot_from_dataptr(const void *const ptr);
+
+/* tracing hook */
+void atm_pool_trace(bool allocating, atm_pool_slot_idx_t slot);

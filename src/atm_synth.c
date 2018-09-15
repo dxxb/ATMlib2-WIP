@@ -150,6 +150,7 @@ int8_t atm_synth_player_setup(const uint8_t player_id, const void *score, const 
 	*/
 	if (atm_pool_alloc(sizeof(dst), dst) == ATM_POOL_INVALID_SLOT) {
 		/* allocation failed, abort */
+		atm_pool_trace(true, ATM_POOL_INVALID_SLOT);
 		return -1;
 	}
 	/* nonzero used_voices_mask also marks the player as setup */
@@ -183,6 +184,7 @@ void atm_synth_player_shutdown(const uint8_t player_index)
 	while (voice_slot != ATM_POOL_INVALID_SLOT) {
 		const struct atm_voice_state *const v = atm_pool_idx2data_ptr(voice_slot);
 		voice_slot = v->next_voice;
+		atm_pool_trace(false, v->fx_head);
 		atm_pool_free_list1(v->fx_head);
 	}
 }

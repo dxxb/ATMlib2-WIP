@@ -97,3 +97,8 @@ atm_pool_slot_idx_t atm_pool_slot_from_dataptr(const void *const data_ptr)
 {
 	return (container_of((union atm_slot *)(data_ptr), struct atm_pool_slot, data) - atm_mem_pool);
 }
+
+__attribute__((weak)) void atm_pool_trace(bool allocating, atm_pool_slot_idx_t slot)
+{
+
+}

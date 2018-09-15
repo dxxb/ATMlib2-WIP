@@ -25,6 +25,7 @@ static void *handle_fx_storage(struct atm_voice_state *const v, const uint8_t id
 				} else {
 					v->fx_head = next_slot;
 				}
+				atm_pool_trace(false, fx_slot);
 				atm_pool_free(fx_slot);
 				return NULL;
 			}
@@ -41,6 +42,7 @@ static void *handle_fx_storage(struct atm_voice_state *const v, const uint8_t id
 
 	/* didn't find existing fx, allocate and return */
 	fx_slot = atm_pool_alloc1(v->fx_head);
+	atm_pool_trace(true, fx_slot);
 	if (fx_slot == ATM_POOL_INVALID_SLOT) {
 		atm_log_event("atm.player.%hhu.voice.%hhu.fx.outofmemory", "e", atm_current_player_index(), atm_current_voice_index());
 		return NULL;
@@ -70,6 +72,7 @@ static void process_np_cmd(struct atm_player_state *const p, struct atm_voice_st
 			if (new_pattern != (vf->pattern_id & ATM_VOICE_PATTERN_ID_MASK)) {
 				/* ignore call command if the stack is full */
 				atm_pool_slot_idx_t new_frame_slot = atm_pool_alloc1(v->fx_head);
+				atm_pool_trace(true, new_frame_slot);
 				if (new_frame_slot != ATM_POOL_INVALID_SLOT) {
 					v->fx_head = new_frame_slot;
 					struct atm_voice_frame *const nf = atm_pool_idx2data_ptr(new_frame_slot);
@@ -105,6 +108,7 @@ static void process_np_cmd(struct atm_player_state *const p, struct atm_voice_st
 					const atm_pool_slot_idx_t last_discarded_slot = v->cur_frame;
 					v->fx_head = atm_pool_next_slot_from_dataptr(vf);
 					v->cur_frame = vf->parent_frame;
+					atm_pool_trace(false, first_discarded_slot);
 					atm_pool_free_list2(first_discarded_slot, last_discarded_slot);
 				}
 			}
