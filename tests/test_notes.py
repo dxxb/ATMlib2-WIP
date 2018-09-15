@@ -299,6 +299,16 @@ class TestArpeggioFX(unittest.TestCase):
 				),
 			]
 		})
+		assert_expected_traces(traces, {
+			# fx.acc_dev.note alternates between 0 and 1 every tick
+			'atm.player.0.voice.0.fx.acc_dev.note': [(int(tm*1E6), (tm+1) % 2) for tm in range(0, 8, 1)],
+			# fx.arp.transpose is 0 every other tick
+			'atm.player.0.voice.0.fx.arp.transpose': [(int(tm*1E6), 0) for tm in range(0, 8, 2)],
+			# fx.arp.notecut event occurs every other tick
+			'atm.player.0.voice.0.fx.arp.notecut': [(int(tm*1E6), 'e') for tm in range(1, 8, 2)],
+			'atm.player.0.voice.0.fx.arp.vol.update': [(int(tm*1E6), 'e') for tm in range(1, 8, 1)],
+			'atm.player.0.voice.0.fx.arp.vol.triggers': [(int(tm*1E6), 'e') for tm in range(0, 8, 1)],
+		})
 	# test 1 tick arpeggio
 	# test auto retrigger
 	# test hold
