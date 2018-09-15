@@ -5,8 +5,6 @@
 #define ATM_CMD_CONSTANTS_H
 
 #define MAX_VOLUME (127)
-/* default to a tick every 40 OSC ticks (i.e. every 40ms) */
-#define ATM_DEFAULT_TICK_RATE (39)
 
 #define ATM_SYNTH_PARAM_MASK (0x03)
 #define ATM_SYNTH_PARAM_VOL (0)

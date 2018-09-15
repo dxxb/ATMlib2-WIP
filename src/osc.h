@@ -25,6 +25,7 @@ ct_assert(OSC_CH_COUNT <= 8 && OSC_CH_COUNT > 0, osc_channel_count);
 
 /* osc tick duration is 1ms */
 #define OSC_TICKRATE (1000)
+#define OSC_HZ_TO_TICKS(hz) (OSC_TICKRATE/(hz))
 #define OSC_ISR_PRESCALER_DIV (OSC_SAMPLERATE/OSC_TICKRATE)
 
 /*

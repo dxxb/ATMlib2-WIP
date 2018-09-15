@@ -34,6 +34,8 @@ const uint16_t noteTable[12] PROGMEM = {
 
 #define U8REC1(A, M, S) (uint8_t)( (((uint16_t)(A) * (uint16_t)(M)) >> 8u) >> (S) )
 #define U8DIVBY12(A)    U8REC1(A, 0xABu, 3u)
+/* default to a tick every 40 OSC ticks (i.e. every 40ms) */
+#define ATM_DEFAULT_TICK_RATE (39)
 
 /* WARN: passing note_idx == 0 will not return 0 */
 static uint16_t note_index_2_phase_inc(const uint8_t note_idx)
