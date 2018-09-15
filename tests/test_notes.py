@@ -313,3 +313,19 @@ class TestArpeggioFX(unittest.TestCase):
 	# test auto retrigger
 	# test hold
 	# test triggering of other FX
+	def test_sfx(self):
+		traces = trace_for_score(self, self.id(), {
+			'voice_count': 1,
+			'patterns': [
+				atmlib_score.concat_bytes(
+					atmlib_score.set_tempo(32),
+					atmlib_score.set_param(0, 127),
+					atmlib_score.slide(0, -8),
+					atmlib_score.note(54),
+					atmlib_score.delay(5),
+					atmlib_score.note(56),
+					atmlib_score.delay(11),
+					atmlib_score.end_pattern(),
+				),
+			]
+		})

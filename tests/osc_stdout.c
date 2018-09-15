@@ -23,6 +23,7 @@ void osc_setup(void)
 static void osc_reset(void)
 {
 	osc_set_isr_active(0);
+	osc_int_count = 1;
 	memset(osc_state_array, 0, sizeof(osc_state_array));
 }
 
