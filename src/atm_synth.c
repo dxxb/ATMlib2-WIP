@@ -407,8 +407,11 @@ static struct osc_params apply_voice_effects(const struct atm_player_state *cons
 	} else {
 		/* WARN: other fields are unintialized. This is not an issue because volume is zero. */
 		osc_params.vol = 0;
-		//osc_params.mod = 0;
-		//osc_params.phase_inc.u16 = 0;
+	#ifndef __AVR__
+		/* Zero out OSC parameters on platforms other than the target (for testing and development) */
+		osc_params.mod = 0;
+		osc_params.phase_inc.u16 = 0;
+	#endif
 	}
 	return osc_params;
 }
