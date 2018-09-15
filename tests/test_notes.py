@@ -108,9 +108,9 @@ class TestDefaults(unittest.TestCase):
 		})
 		assert_expected_traces(traces, {
 			# one OSC tick every millisecond for 80 ms (80 ticks)
-			'osc.tick': [(tm, 'e') for tm in range(0, int(81*1E6), int(1E6))],
+			'osc.tick': [(int(1E6*tm), 'e') for tm in range(0, 81)],
 			# one player tick every 40 milliseconds for 80 ms (2 ticks)
-			'atm.player.0.tick': [(tm, 'e') for tm in range(0, int(81*1E6), int(40*1E6))]
+			'atm.player.0.tick': [(int(tm*1E6), 'e') for tm in range(0, 81, 40)]
 		})
 
 	def test_default_mod(self):
@@ -188,7 +188,7 @@ class TestLFOFX(unittest.TestCase):
 												[(i*int(1E6), 20-i) for i in range(11, 31)]+
 												[(i*int(1E6), i-40) for i in range(31, 41)],
 			# no note active so LFO FX does not make it to OSC params
-			'osc.channels.0.vol': [(tm, 0) for tm in range(0, int(41*1E6), int(1E6))]
+			'osc.channels.0.vol': [(int(tm*1E6), 0) for tm in range(0, 41)]
 		})
 
 	def test_vol_with_note(self):
@@ -301,13 +301,13 @@ class TestArpeggioFX(unittest.TestCase):
 		})
 		assert_expected_traces(traces, {
 			# fx.acc_dev.note alternates between 0 and 1 every tick
-			'atm.player.0.voice.0.fx.acc_dev.note': [(int(tm*1E6), (tm+1) % 2) for tm in range(0, 8, 1)],
+			'atm.player.0.voice.0.fx.acc_dev.note': [(int(tm*1E6), (tm+1) % 2) for tm in range(0, 8)],
 			# fx.arp.transpose is 0 every other tick
 			'atm.player.0.voice.0.fx.arp.transpose': [(int(tm*1E6), 0) for tm in range(0, 8, 2)],
 			# fx.arp.notecut event occurs every other tick
 			'atm.player.0.voice.0.fx.arp.notecut': [(int(tm*1E6), 'e') for tm in range(1, 8, 2)],
-			'atm.player.0.voice.0.fx.arp.vol.update': [(int(tm*1E6), 'e') for tm in range(1, 8, 1)],
-			'atm.player.0.voice.0.fx.arp.vol.triggers': [(int(tm*1E6), 'e') for tm in range(0, 8, 1)],
+			'atm.player.0.voice.0.fx.arp.vol.update': [(int(tm*1E6), 'e') for tm in range(1, 8)],
+			'atm.player.0.voice.0.fx.arp.vol.triggers': [(int(tm*1E6), 'e') for tm in range(0, 8)],
 		})
 	# test 1 tick arpeggio
 	# test auto retrigger
