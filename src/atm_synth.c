@@ -91,7 +91,7 @@ void atm_score_header(const uint8_t *score, struct atm_score_hdr *hdr)
 /* Without 'no inline' here GCC generates extra instructions in init_voice() */
 static __attribute__ ((noinline)) const uint8_t *get_pattern_start_ptr(const uint8_t *s, const uint8_t pattern_idx)
 {
-	const uint8_t ofs = 2+sizeof(uint16_t)*pattern_idx;
+	const uint8_t ofs = sizeof(struct atm_score_hdr)+sizeof(uint16_t)*pattern_idx;
 	return s + pgm_read_word(s+ofs);
 }
 
