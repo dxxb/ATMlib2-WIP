@@ -1,7 +1,7 @@
 
 ATMLIB_PATH = $(PWD)/src
 
-ATMLIB_SRC = atm_synth.c atm_pool.c cmd_parse.c atm_log.c
+ATMLIB_SRC = atm_synth.c atm_pool.c atm_log.c
 STDOUT_DEMO_SRC = test_synth.c osc_stdout.c
 CFLAGS += -O0 -I$(ATMLIB_PATH) -g
 
