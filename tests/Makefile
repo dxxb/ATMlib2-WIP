@@ -7,10 +7,18 @@ CFLAGS += -O0 -I$(ATMLIB_PATH) -g
 
 SRCS = $(addprefix $(ATMLIB_PATH)/,$(ATMLIB_SRC)) $(STDOUT_DEMO_SRC)
 
+WAV_FILES = $(patsubst %.atm,%.wav,$(wildcard *.atm))
+
 all: runtests
 
-runtests: .depend test_synth
+runtests: .depend test_synth $(wildcard *.py)
 	python3 -m unittest discover -v
+
+wave_files: runtests $(WAV_FILES)
+
+%.wav: %.atm
+	@echo "$^ -> $@"
+	@./test_synth -s $^ 2>/dev/null | sox -traw -r16000 -b16 -c1 -esigned-integer -q - $@
 
 test_synth: $(SRCS) | .depend Makefile
 	$(CC) $(CFLAGS) -o $@ $^
@@ -24,6 +32,6 @@ depend: .depend
 	$(CC) $(CFLAGS) -MD $^ -MF ./.depend
 
 clean:
-	rm test_synth
+	rm -f test_synth *.wav *.atm *.trace atm_test_files
 
-.PHONY: all depend clean
+.PHONY: all wave_files runtests depend clean

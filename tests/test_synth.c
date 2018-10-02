@@ -23,12 +23,12 @@ int main(int argc, char *argv[])
 	int ch;
 	bool emit_samples = false;
 
-	while ((ch = getopt(argc, argv, "s")) != -1) {
+	while ((ch = getopt(argc, argv, "sh")) != -1) {
 		switch (ch) {
 			case 's':
 				emit_samples = true;
 				break;
-			case '?':
+			case 'h':
 			default:
 				return 4;
 		}
