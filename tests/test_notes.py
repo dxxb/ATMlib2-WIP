@@ -41,7 +41,7 @@ def trace_for_score(self, test_id_str, score_dict):
 def assert_expected_traces(traces, expected_values):
 	for k, v in expected_values.items():
 		assert k in traces, '{} not in traces'.format(k)
-		assert traces[k] == v, '{}: expected {}, found {}'.format(k, v, traces[k])
+		assert traces[k] == v, '{}:\nExpected\n{}\nFound\n{}'.format(k, v, traces[k])
 
 
 class TestNotes(unittest.TestCase):
@@ -140,9 +140,82 @@ class TestTempo(unittest.TestCase):
 
 
 class TestTransposition(unittest.TestCase):
-	# test set trasnposition
-	# test add transposition
-	pass
+	def test_transposition_no_note(self):
+		traces = trace_for_score(self, self.id(), {
+			'voice_count': 1,
+			'patterns': [
+				atmlib_score.concat_bytes(
+					atmlib_score.set_tempo(1),
+					atmlib_score.set_param(0, 127),
+					atmlib_score.set_param(2, 3),
+					atmlib_score.delay(20),
+					atmlib_score.end_pattern(),
+				),
+			]
+		})
+		timestamps = range(0, 20000000, 1000000)
+		assert_expected_traces(traces, {
+			'osc.channels.0.vol': [(tm, 0) for tm in timestamps],
+			'atm.player.0.voice.0.fx.acc_dev.transpose': [(tm, 3) for tm in timestamps]
+		})
+
+	def test_set_transposition(self):
+		traces = trace_for_score(self, self.id(), {
+			'voice_count': 1,
+			'patterns': [
+				atmlib_score.concat_bytes(
+					atmlib_score.set_tempo(1),
+					atmlib_score.set_param(0, 127),
+					atmlib_score.note(10),
+					atmlib_score.delay(5),
+					atmlib_score.set_param(2, 3),
+					atmlib_score.delay(5),
+					atmlib_score.set_param(2, -3),
+					atmlib_score.delay(5),
+					atmlib_score.end_pattern(),
+				),
+			]
+		})
+		timestamps = range(0, 15000000, 1000000)
+		assert_expected_traces(traces, {
+			'osc.channels.0.vol': [(tm, 127) for tm in timestamps],
+			'atm.player.0.voice.0.fx.acc_dev.note': [(tm, 10) for tm in timestamps],
+			'atm.player.0.voice.0.fx.acc_dev.transpose': ([(tm, 0) for tm in timestamps[:5]]+
+												[(tm, 3) for tm in timestamps[5:10]]+
+												[(tm, -3) for tm in timestamps[10:]]),
+			'osc.channels.0.phase_increment': ([(tm, 450) for tm in timestamps[:5]]+
+												[(tm, 535) for tm in timestamps[5:10]]+
+												[(tm, 378) for tm in timestamps[10:]])
+		})
+
+	def test_add_transposition(self):
+		traces = trace_for_score(self, self.id(), {
+			'voice_count': 1,
+			'patterns': [
+				atmlib_score.concat_bytes(
+					atmlib_score.set_tempo(1),
+					atmlib_score.set_param(0, 127),
+					atmlib_score.note(10),
+					atmlib_score.delay(5),
+					atmlib_score.addto_param(2, 3),
+					atmlib_score.delay(5),
+					atmlib_score.addto_param(2, -6),
+					atmlib_score.delay(5),
+					atmlib_score.end_pattern(),
+				),
+			]
+		})
+		timestamps = range(0, 15000000, 1000000)
+		assert_expected_traces(traces, {
+			'osc.channels.0.vol': [(tm, 127) for tm in timestamps],
+			'atm.player.0.voice.0.fx.acc_dev.note': [(tm, 10) for tm in timestamps],
+			'atm.player.0.voice.0.fx.acc_dev.transpose': ([(tm, 0) for tm in timestamps[:5]]+
+												[(tm, 3) for tm in timestamps[5:10]]+
+												[(tm, -3) for tm in timestamps[10:]]),
+			'osc.channels.0.phase_increment': ([(tm, 450) for tm in timestamps[:5]]+
+												[(tm, 535) for tm in timestamps[5:10]]+
+												[(tm, 378) for tm in timestamps[10:]])
+		})
 
 
 class TestVolume(unittest.TestCase):
