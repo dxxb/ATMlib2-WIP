@@ -31,17 +31,18 @@ wave_files: $(WAV_FILES) atm_test_files
 	@echo "$^ -> $@"
 	@./test_synth -s $^ 2>/dev/null | sox -traw -r16000 -b16 -c1 -esigned-integer -q - $@
 
-test_synth: $(SRCS) .depend
+test_synth: $(SRCS) | .depend
 	$(CC) $(CFLAGS) -o $@ $^
 
 depend: .depend
 
 .depend: $(SRCS)
 	rm -f ./.depend
-	$(CC) $(CFLAGS) -MD $^ -MF ./.depend
+	$(CC) $(CFLAGS) -M -MF ./.depend $^
 
 clean:
-	rm -f test_synth *.wav *.atm *.trace atm_test_files
-	rm -f ./.depend
+	rm -f test_synth *.wav *.atm *.trace atm_test_files .depend
+	rm -rf *.dSYM
+	rm -rf __pycache__
 
 .PHONY: all wave_files runtests depend clean
