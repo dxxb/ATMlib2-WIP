@@ -2,7 +2,8 @@
 
 import subprocess
 import unittest
-import atmlib_score
+import atmlib_score as score
+import atmlib_synth as synth
 
 
 def write_score_file(dst_path, score_bytes):
@@ -30,8 +31,8 @@ def group_trace_values(lines):
 
 def trace_for_score(self, test_id_str, score_dict):
 	dst_path = str(test_id_str)+'.atm'
-	score = atmlib_score.score_from_dict(score_dict)
-	write_score_file(dst_path, score.score_bytes())
+	s = score.score_from_dict(score_dict)
+	write_score_file(dst_path, s.score_bytes())
 	output = run_test_synth(dst_path)
 	with open(str(test_id_str)+'.trace', 'wb+') as f:
 		f.write(output)
@@ -53,14 +54,14 @@ class TestNotes(unittest.TestCase):
 		traces = trace_for_score(self, self.id(), {
 			'voice_count': 1,
 			'patterns': [
-				atmlib_score.concat_bytes(
-					atmlib_score.set_tempo(1),
-					atmlib_score.note(1),
-					atmlib_score.delay(1),
-					atmlib_score.note(2),
-					atmlib_score.delay(1),
-					atmlib_score.note(0),
-					atmlib_score.end_pattern(),
+				score.concat_bytes(
+					synth.set_tempo(1),
+					synth.note(1),
+					synth.delay(1),
+					synth.note(2),
+					synth.delay(1),
+					synth.note(0),
+					synth.end_pattern(),
 				),
 			]
 		})
@@ -81,12 +82,12 @@ class TestDefaults(unittest.TestCase):
 		traces = trace_for_score(self, self.id(), {
 			'voice_count': 1,
 			'patterns': [
-				atmlib_score.concat_bytes(
-					atmlib_score.set_tempo(1),
-					atmlib_score.note(1),
-					atmlib_score.delay(1),
-					atmlib_score.delay(1),
-					atmlib_score.end_pattern(),
+				score.concat_bytes(
+					synth.set_tempo(1),
+					synth.note(1),
+					synth.delay(1),
+					synth.delay(1),
+					synth.end_pattern(),
 				),
 			]
 		})
@@ -99,10 +100,10 @@ class TestDefaults(unittest.TestCase):
 		traces = trace_for_score(self, self.id(), {
 			'voice_count': 1,
 			'patterns': [
-				atmlib_score.concat_bytes(
-					atmlib_score.delay(1),
-					atmlib_score.delay(1),
-					atmlib_score.end_pattern(),
+				score.concat_bytes(
+					synth.delay(1),
+					synth.delay(1),
+					synth.end_pattern(),
 				),
 			]
 		})
@@ -118,13 +119,13 @@ class TestDefaults(unittest.TestCase):
 		traces = trace_for_score(self, self.id(), {
 			'voice_count': 1,
 			'patterns': [
-				atmlib_score.concat_bytes(
-					atmlib_score.set_tempo(1),
+				score.concat_bytes(
+					synth.set_tempo(1),
 					# start a note to make sure the mod field in OSC params is updated
-					atmlib_score.note(1),
-					atmlib_score.delay(1),
-					atmlib_score.delay(1),
-					atmlib_score.end_pattern(),
+					synth.note(1),
+					synth.delay(1),
+					synth.delay(1),
+					synth.end_pattern(),
 				),
 			]
 		})
@@ -144,12 +145,12 @@ class TestTransposition(unittest.TestCase):
 		traces = trace_for_score(self, self.id(), {
 			'voice_count': 1,
 			'patterns': [
-				atmlib_score.concat_bytes(
-					atmlib_score.set_tempo(1),
-					atmlib_score.set_param(atmlib_score.FX_PARM.VOL, 127),
-					atmlib_score.set_param(atmlib_score.FX_PARM.TSP, 3),
-					atmlib_score.delay(20),
-					atmlib_score.end_pattern(),
+				score.concat_bytes(
+					synth.set_tempo(1),
+					synth.set_param(synth.FX_PARM.VOL, 127),
+					synth.set_param(synth.FX_PARM.TSP, 3),
+					synth.delay(20),
+					synth.end_pattern(),
 				),
 			]
 		})
@@ -163,16 +164,16 @@ class TestTransposition(unittest.TestCase):
 		traces = trace_for_score(self, self.id(), {
 			'voice_count': 1,
 			'patterns': [
-				atmlib_score.concat_bytes(
-					atmlib_score.set_tempo(1),
-					atmlib_score.set_param(atmlib_score.FX_PARM.VOL, 127),
-					atmlib_score.note(10),
-					atmlib_score.delay(5),
-					atmlib_score.set_param(atmlib_score.FX_PARM.TSP, 3),
-					atmlib_score.delay(5),
-					atmlib_score.set_param(atmlib_score.FX_PARM.TSP, -3),
-					atmlib_score.delay(5),
-					atmlib_score.end_pattern(),
+				score.concat_bytes(
+					synth.set_tempo(1),
+					synth.set_param(synth.FX_PARM.VOL, 127),
+					synth.note(10),
+					synth.delay(5),
+					synth.set_param(synth.FX_PARM.TSP, 3),
+					synth.delay(5),
+					synth.set_param(synth.FX_PARM.TSP, -3),
+					synth.delay(5),
+					synth.end_pattern(),
 				),
 			]
 		})
@@ -192,16 +193,16 @@ class TestTransposition(unittest.TestCase):
 		traces = trace_for_score(self, self.id(), {
 			'voice_count': 1,
 			'patterns': [
-				atmlib_score.concat_bytes(
-					atmlib_score.set_tempo(1),
-					atmlib_score.set_param(atmlib_score.FX_PARM.VOL, 127),
-					atmlib_score.note(10),
-					atmlib_score.delay(5),
-					atmlib_score.addto_param(2, 3),
-					atmlib_score.delay(5),
-					atmlib_score.addto_param(2, -6),
-					atmlib_score.delay(5),
-					atmlib_score.end_pattern(),
+				score.concat_bytes(
+					synth.set_tempo(1),
+					synth.set_param(synth.FX_PARM.VOL, 127),
+					synth.note(10),
+					synth.delay(5),
+					synth.addto_param(2, 3),
+					synth.delay(5),
+					synth.addto_param(2, -6),
+					synth.delay(5),
+					synth.end_pattern(),
 				),
 			]
 		})
@@ -243,13 +244,13 @@ class TestSlideFX(unittest.TestCase):
 		traces = trace_for_score(self, self.id(), {
 			'voice_count': 1,
 			'patterns': [
-				atmlib_score.concat_bytes(
-					atmlib_score.set_tempo(1),
-					atmlib_score.set_param(atmlib_score.FX_PARM.VOL, 127),
-					atmlib_score.slide(atmlib_score.FX_PARM.VOL, -8),
-					atmlib_score.note(1),
-					atmlib_score.delay(20),
-					atmlib_score.end_pattern(),
+				score.concat_bytes(
+					synth.set_tempo(1),
+					synth.set_param(synth.FX_PARM.VOL, 127),
+					synth.slide(synth.FX_PARM.VOL, -8),
+					synth.note(1),
+					synth.delay(20),
+					synth.end_pattern(),
 				),
 			]
 		})
@@ -284,13 +285,13 @@ class TestSlideFX(unittest.TestCase):
 		traces = trace_for_score(self, self.id(), {
 			'voice_count': 1,
 			'patterns': [
-				atmlib_score.concat_bytes(
-					atmlib_score.set_tempo(1),
-					atmlib_score.set_param(atmlib_score.FX_PARM.VOL, 0),
-					atmlib_score.slide(atmlib_score.FX_PARM.VOL, 8),
-					atmlib_score.note(1),
-					atmlib_score.delay(20),
-					atmlib_score.end_pattern(),
+				score.concat_bytes(
+					synth.set_tempo(1),
+					synth.set_param(synth.FX_PARM.VOL, 0),
+					synth.slide(synth.FX_PARM.VOL, 8),
+					synth.note(1),
+					synth.delay(20),
+					synth.end_pattern(),
 				),
 			]
 		})
@@ -327,11 +328,11 @@ class TestLFOFX(unittest.TestCase):
 		traces = trace_for_score(self, self.id(), {
 			'voice_count': 1,
 			'patterns': [
-				atmlib_score.concat_bytes(
-					atmlib_score.set_tempo(1),
-					atmlib_score.lfo(fx_parm, 10, 0x00),
-					atmlib_score.delay(41),
-					atmlib_score.end_pattern(),
+				score.concat_bytes(
+					synth.set_tempo(1),
+					synth.lfo(fx_parm, 10, 0x00),
+					synth.delay(41),
+					synth.end_pattern(),
 				),
 			]
 		})
@@ -346,31 +347,31 @@ class TestLFOFX(unittest.TestCase):
 
 	def test_vol_unit_rate(self):
 		"""Full period of volume LFO with depth 10, step 1, interval 1 no notes"""
-		self._test_param_unit_rate(atmlib_score.FX_PARM.VOL, 'vol')
+		self._test_param_unit_rate(synth.FX_PARM.VOL, 'vol')
 
 	def test_mod_unit_rate(self):
 		"""Full period of mod LFO with depth 10, step 1, interval 1 no notes"""
-		self._test_param_unit_rate(atmlib_score.FX_PARM.MOD, 'mod')
+		self._test_param_unit_rate(synth.FX_PARM.MOD, 'mod')
 
 	def test_phi_unit_rate(self):
 		"""Full period of phi LFO with depth 10, step 1, interval 1 no notes"""
-		self._test_param_unit_rate(atmlib_score.FX_PARM.PHI, 'phi')
+		self._test_param_unit_rate(synth.FX_PARM.PHI, 'phi')
 
 	def test_tsp_unit_rate(self):
 		"""Full period of tsp LFO with depth 10, step 1, interval 1 no notes"""
-		self._test_param_unit_rate(atmlib_score.FX_PARM.TSP, 'tsp')
+		self._test_param_unit_rate(synth.FX_PARM.TSP, 'tsp')
 
 	def _test_param_with_note(self, fx_parm, fx_parm_str):
 		"""Full period of volume LFO with depth 10, step 1, interval 1 note active"""
 		traces = trace_for_score(self, self.id(), {
 			'voice_count': 1,
 			'patterns': [
-				atmlib_score.concat_bytes(
-					atmlib_score.set_tempo(1),
-					atmlib_score.note(20),
-					atmlib_score.lfo(fx_parm, 10, 0x00),
-					atmlib_score.delay(41),
-					atmlib_score.end_pattern(),
+				score.concat_bytes(
+					synth.set_tempo(1),
+					synth.note(20),
+					synth.lfo(fx_parm, 10, 0x00),
+					synth.delay(41),
+					synth.end_pattern(),
 				),
 			]
 		})
@@ -381,17 +382,17 @@ class TestLFOFX(unittest.TestCase):
 			# 0 -> 10 -> 0 -> -10 -> 0 (in steps of 1)
 			'atm.player.0.voice.0.fx.lfo.'+fx_parm_str: expected_parm,
 		})
-		if fx_parm == atmlib_score.FX_PARM.VOL:
+		if fx_parm == synth.FX_PARM.VOL:
 			assert_expected_traces(traces, {
 				# OSC volume must be >= 0 so we expect zeros when LFO is negative
 				'osc.channels.0.vol': [(t, v if v >= 0 else 0) for t,v in expected_parm]
 			})
-		elif fx_parm == atmlib_score.FX_PARM.TSP:
+		elif fx_parm == synth.FX_PARM.TSP:
 			assert_expected_traces(traces, {
 				# OSC volume must be >= 0 so we expect zeros when LFO is negative
 				'atm.player.0.voice.0.fx.acc_dev.transpose': expected_parm
 			})
-		elif fx_parm == atmlib_score.FX_PARM.PHI:
+		elif fx_parm == synth.FX_PARM.PHI:
 			assert_expected_traces(traces, {
 				# OSC volume must be >= 0 so we expect zeros when LFO is negative
 				'osc.channels.0.phi': [(t, v+802) for t,v in expected_parm]
@@ -404,30 +405,30 @@ class TestLFOFX(unittest.TestCase):
 
 	def test_vol_with_note(self):
 		"""Full period of volume LFO with depth 10, step 1, interval 1 note active"""
-		self._test_param_with_note(atmlib_score.FX_PARM.VOL, 'vol')
+		self._test_param_with_note(synth.FX_PARM.VOL, 'vol')
 
 	def test_mod_with_note(self):
 		"""Full period of mod LFO with depth 10, step 1, interval 1 note active"""
-		self._test_param_with_note(atmlib_score.FX_PARM.MOD, 'mod')
+		self._test_param_with_note(synth.FX_PARM.MOD, 'mod')
 
 	def test_phi_with_note(self):
 		"""Full period of phi LFO with depth 10, step 1, interval 1 note active"""
-		self._test_param_with_note(atmlib_score.FX_PARM.PHI, 'phi')
+		self._test_param_with_note(synth.FX_PARM.PHI, 'phi')
 
 	def test_tsp_with_note(self):
 		"""Full period of tsp LFO with depth 10, step 1, interval 1 note active"""
-		self._test_param_with_note(atmlib_score.FX_PARM.TSP, 'tsp')
+		self._test_param_with_note(synth.FX_PARM.TSP, 'tsp')
 
 	def _test_parm_non_unit_rate(self, fx_parm, fx_parm_str):
 		"""Full period of volume LFO with depth 10, step 4, interval 4"""
 		traces = trace_for_score(self, self.id(), {
 			'voice_count': 1,
 			'patterns': [
-				atmlib_score.concat_bytes(
-					atmlib_score.set_tempo(1),
-					atmlib_score.lfo(fx_parm, 10, 0x33),
-					atmlib_score.delay(41),
-					atmlib_score.end_pattern(),
+				score.concat_bytes(
+					synth.set_tempo(1),
+					synth.lfo(fx_parm, 10, 0x33),
+					synth.delay(41),
+					synth.end_pattern(),
 				),
 			]
 		})
@@ -442,19 +443,19 @@ class TestLFOFX(unittest.TestCase):
 
 	def test_vol_non_unit_rate(self):
 		"""Full period of volume LFO with depth 10, step 4, interval 4"""
-		self._test_parm_non_unit_rate(atmlib_score.FX_PARM.VOL, 'vol')
+		self._test_parm_non_unit_rate(synth.FX_PARM.VOL, 'vol')
 
 	def test_mod_non_unit_rate(self):
 		"""Full period of mod LFO with depth 10, step 4, interval 4"""
-		self._test_parm_non_unit_rate(atmlib_score.FX_PARM.MOD, 'mod')
+		self._test_parm_non_unit_rate(synth.FX_PARM.MOD, 'mod')
 
 	def test_phi_non_unit_rate(self):
 		"""Full period of phi LFO with depth 10, step 4, interval 4"""
-		self._test_parm_non_unit_rate(atmlib_score.FX_PARM.PHI, 'phi')
+		self._test_parm_non_unit_rate(synth.FX_PARM.PHI, 'phi')
 
 	def test_tsp_non_unit_rate(self):
 		"""Full period of tsp LFO with depth 10, step 4, interval 4"""
-		self._test_parm_non_unit_rate(atmlib_score.FX_PARM.TSP, 'tsp')
+		self._test_parm_non_unit_rate(synth.FX_PARM.TSP, 'tsp')
 
 
 class TestArpeggioFX(unittest.TestCase):
@@ -465,14 +466,14 @@ class TestArpeggioFX(unittest.TestCase):
 		traces = trace_for_score(self, self.id(), {
 			'voice_count': 1,
 			'patterns': [
-				atmlib_score.concat_bytes(
-					atmlib_score.set_tempo(1),
-					atmlib_score.set_param(atmlib_score.FX_PARM.VOL, 127),
-					atmlib_score.slide(atmlib_score.FX_PARM.VOL, -8),
-					atmlib_score.arp(1, 2, 0x37),
-					atmlib_score.note(1),
-					atmlib_score.delay(8),
-					atmlib_score.end_pattern(),
+				score.concat_bytes(
+					synth.set_tempo(1),
+					synth.set_param(synth.FX_PARM.VOL, 127),
+					synth.slide(synth.FX_PARM.VOL, -8),
+					synth.arp(1, 2, 0x37),
+					synth.note(1),
+					synth.delay(8),
+					synth.end_pattern(),
 				),
 			]
 		})
@@ -492,14 +493,14 @@ class TestArpeggioFX(unittest.TestCase):
 		traces = trace_for_score(self, self.id(), {
 			'voice_count': 1,
 			'patterns': [
-				atmlib_score.concat_bytes(
-					atmlib_score.set_tempo(1),
-					atmlib_score.set_param(atmlib_score.FX_PARM.VOL, 127),
-					atmlib_score.slide(atmlib_score.FX_PARM.VOL, -8),
-					atmlib_score.arp(1, 3, 0x37),
-					atmlib_score.note(1),
-					atmlib_score.delay(8),
-					atmlib_score.end_pattern(),
+				score.concat_bytes(
+					synth.set_tempo(1),
+					synth.set_param(synth.FX_PARM.VOL, 127),
+					synth.slide(synth.FX_PARM.VOL, -8),
+					synth.arp(1, 3, 0x37),
+					synth.note(1),
+					synth.delay(8),
+					synth.end_pattern(),
 				),
 			]
 		})
@@ -519,14 +520,14 @@ class TestArpeggioFX(unittest.TestCase):
 		traces = trace_for_score(self, self.id(), {
 			'voice_count': 1,
 			'patterns': [
-				atmlib_score.concat_bytes(
-					atmlib_score.set_tempo(1),
-					atmlib_score.set_param(atmlib_score.FX_PARM.VOL, 127),
-					atmlib_score.slide(atmlib_score.FX_PARM.VOL, -8),
-					atmlib_score.notecut(1),
-					atmlib_score.note(1),
-					atmlib_score.delay(8),
-					atmlib_score.end_pattern(),
+				score.concat_bytes(
+					synth.set_tempo(1),
+					synth.set_param(synth.FX_PARM.VOL, 127),
+					synth.slide(synth.FX_PARM.VOL, -8),
+					synth.notecut(1),
+					synth.note(1),
+					synth.delay(8),
+					synth.end_pattern(),
 				),
 			]
 		})
@@ -545,20 +546,3 @@ class TestArpeggioFX(unittest.TestCase):
 	# test auto retrigger
 	# test hold
 	# test triggering of other FX
-
-	def test_sfx(self):
-		traces = trace_for_score(self, self.id(), {
-			'voice_count': 1,
-			'patterns': [
-				atmlib_score.concat_bytes(
-					atmlib_score.set_tempo(32),
-					atmlib_score.set_param(atmlib_score.FX_PARM.VOL, 127),
-					atmlib_score.slide(atmlib_score.FX_PARM.VOL, -8),
-					atmlib_score.note(54),
-					atmlib_score.delay(5),
-					atmlib_score.note(56),
-					atmlib_score.delay(11),
-					atmlib_score.end_pattern(),
-				),
-			]
-		})
