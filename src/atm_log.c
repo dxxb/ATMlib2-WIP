@@ -24,6 +24,6 @@ const char *cmd_short_labels[] = {
 const char *cmd_fx_dest_short_labels[] = {
 	"vol",
 	"mod",
-	"phi",
 	"tsp",
+	"phi",
 };
