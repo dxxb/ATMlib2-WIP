@@ -327,7 +327,8 @@ static void process_np_cmd(struct atm_player_state *const p, struct atm_voice_st
 		}
 	} else if (cid == (ATM_CMD_NP_ARPEGGIO<<4)) {
 #if ATM_HAS_FX_NOTE_RETRIG
-		struct atm_fx_arpeggio_slot *fx = handle_fx_storage(v, cid, sizeof(struct atm_fx_arpeggio_slot), csz);
+		const uint8_t id = ATM_SYNTH_PARAM_TSP | cid;
+		struct atm_fx_arpeggio_slot *fx = handle_fx_storage(v, id, sizeof(struct atm_fx_arpeggio_slot), csz);
 		if (fx) {
 			atm_log_event("atm.player.%hhu.voice.%hhu.fx.arp.add", "e", atm_current_player_index(), atm_current_voice_index());
 			fx->common.flags = ((cmd->params[0] & FX_COMMON_FLAGS_RETRIGGER_ON_NOTEON_MASK) |
@@ -555,6 +556,7 @@ static void process_voice_fx(struct fx_processing_state *const s, struct fx_comm
 		atm_log_event("atm.player.%hhu.voice.%hhu.fx.%s.%s.skip", "e", atm_current_player_index(), atm_current_voice_index(), atm_log_cmd_label(c->id >> 4), atm_log_fx_dest_label(c->id));
 		return;
 	}
+	atm_log_event("atm.player.%hhu.voice.%hhu.fx.%s.%s.process", "e", atm_current_player_index(), atm_current_voice_index(), atm_log_cmd_label(c->id >> 4), atm_log_fx_dest_label(c->id));
 
 	/* figure out if we should re-trigger */
 	const uint8_t triggered = (c->flags & FX_COMMON_FLAGS_RETRIGGER_ON_ANY_MASK) & s->triggered_flags;
@@ -568,7 +570,6 @@ static void process_voice_fx(struct fx_processing_state *const s, struct fx_comm
 		atm_log_event("atm.player.%hhu.voice.%hhu.fx.%s.%s.update", "e", atm_current_player_index(), atm_current_voice_index(), atm_log_cmd_label(c->id >> 4), atm_log_fx_dest_label(c->id));
 		c->count = 1;
 	} else {
-		atm_log_event("atm.player.%hhu.voice.%hhu.fx.%s.%s.apply", "e", atm_current_player_index(), atm_current_voice_index(), atm_log_cmd_label(c->id >> 4), atm_log_fx_dest_label(c->id));
 		c->count++;
 	}
 
@@ -678,8 +679,8 @@ static uint8_t process_voice(struct atm_player_state *const p, struct atm_voice_
 				sei();
 				atm_log_event("atm.player.%hhu.voice.%hhu.oscparam_set", "e", atm_current_player_index(), atm_current_voice_index());
 				atm_log_event("osc.channels.%hhu.vol", "%hhu f", osc_ch_idx, osc_params.vol);
-				atm_log_event("osc.channels.%hhu.mod", "%hhu f", osc_ch_idx, osc_params.mod);
-				atm_log_event("osc.channels.%hhu.phase_increment", "%hu f", osc_ch_idx, osc_params.phase_inc.u16);
+				atm_log_event("osc.channels.%hhu.mod", "%hhd f", osc_ch_idx, osc_params.mod);
+				atm_log_event("osc.channels.%hhu.phi", "%hu f", osc_ch_idx, osc_params.phase_inc.u16);
 			} else {
 				atm_log_event("atm.player.%hhu.voice.%hhu.oscparam_skip", "e", atm_current_player_index(), atm_current_voice_index());
 			}

@@ -17,6 +17,13 @@ class CMDS:
 	SET_LOOP_PATTERN = 10
 
 
+class FX_PARM:
+	VOL = 0
+	MOD = 1
+	TSP = 2
+	PHI = 3
+
+
 def note_off():
 	return bytes([0xC0])
 
@@ -62,6 +69,12 @@ def lfo(param_id, depth, rate):
 def notecut(interval_ticks):
 	assert interval_ticks >= 1
 	return struct.pack('BB', mkcmd(CMDS.ARPEGGIO, 1), 0x40 | ((interval_ticks-1) & 0x1F))
+
+
+def arp(interval_ticks, notes_count, notes):
+	assert interval_ticks >= 1
+	arp_cmp = (notes_count)*0x20
+	return struct.pack('BBB', mkcmd(CMDS.ARPEGGIO, 2), arp_cmp | ((interval_ticks-1) & 0x1F), notes)
 
 
 def set_param(param_id, value):
