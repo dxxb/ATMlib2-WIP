@@ -2,7 +2,7 @@
 ATMLIB_PATH = $(PWD)/src
 
 ATMLIB_SRC = atm_synth.c atm_pool.c atm_log.c
-STDOUT_DEMO_SRC = test_synth.c osc_stdout.c
+STDOUT_DEMO_SRC = test_synth.c osc_standalone.c
 CFLAGS += -O0 -I$(ATMLIB_PATH) -g
 
 SRCS = $(addprefix $(ATMLIB_PATH)/,$(ATMLIB_SRC)) $(STDOUT_DEMO_SRC)
