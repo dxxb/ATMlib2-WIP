@@ -44,7 +44,7 @@ def noteindex_by_name(note_str):
 			index -=1
 		if note_str[2] in ('_', '#'):
 			index +=1
-	return index
+	return index+1
 
 
 def note_off():
