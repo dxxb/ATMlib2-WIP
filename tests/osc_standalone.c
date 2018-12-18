@@ -4,7 +4,7 @@
 
 #define OSC_HI(v) ((v)>>8)
 #define OSC_LO(v) ((v)&0xFF)
-#define OSC_SAMPLE_HEADROOM_BITS (16-10)
+#define OSC_SAMPLE_HEADROOM_BITS (16-(OSC_CH_COUNT/2)-8)
 #define OSC_GAIN_MUL (1<<(OSC_SAMPLE_HEADROOM_BITS-1))
 
 
@@ -12,6 +12,7 @@ static void osc_reset(void);
 
 static uint8_t osc_int_count;
 static bool osc_active = false;
+uint8_t osc_gain;
 struct osc_state osc_state_array[OSC_CH_COUNT];
 
 
@@ -24,6 +25,7 @@ static void osc_reset(void)
 {
 	osc_set_isr_active(0);
 	osc_int_count = 1;
+	osc_gain = OSC_GAIN_MUL;
 	memset(osc_state_array, 0, sizeof(osc_state_array));
 }
 
@@ -69,5 +71,5 @@ int16_t osc_next_sample(void)
 		osc_int_count = OSC_ISR_PRESCALER_DIV;
 		osc_tick_handler();
 	}
-	return pcm*OSC_GAIN_MUL;
+	return pcm * osc_gain;
 }
