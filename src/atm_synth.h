@@ -63,6 +63,9 @@ void atm_synth_player_set_pause(const uint8_t player_id, const bool pause);
 /* hooks */
 uint8_t atm_tick_handler(uint8_t used_osc_ch_mask);
 uint8_t atm_player_loop(struct atm_player_state *const p);
-void atm_next_command(const uint8_t *const cmd_ptr, struct atm_cmd_data *const dst);
+void atm_next_command(struct atm_voice_state *const v, const uint8_t voice_index, const uint8_t *const cmd_ptr, struct atm_cmd_data *const dst);
+
+/* command injection */
+void atm_process_cmd(struct atm_player_state *const p, struct atm_voice_state *const v, const struct atm_cmd_data *const cmd);
 
 #endif /* _ATM_LIB_H */

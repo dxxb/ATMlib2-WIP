@@ -47,7 +47,7 @@ const uint16_t noteTable[12] PROGMEM = {
 #define ATM_DEFAULT_TICK_RATE (39)
 
 /* WARN: passing note_idx == 0 will not return 0 */
-static uint16_t note_index_2_phase_inc(const uint8_t note_idx)
+__attribute__((weak)) uint16_t note_index_2_phase_inc(const uint8_t note_idx)
 {
 	const uint8_t adj = U8DIVBY12(note_idx);
 	return pgm_read_word(&noteTable[(note_idx-12*adj)]) >> (5-adj);
@@ -84,13 +84,12 @@ static void atm_synth_voice_note_reset(struct atm_note_state *const note_state)
 	memset(note_state, 0, sizeof(*note_state));
 }
 
-void atm_score_header(const uint8_t *score, struct atm_score_hdr *hdr)
+__attribute__((weak)) void atm_score_header(const uint8_t *score, struct atm_score_hdr *hdr)
 {
 	memcpy_P(hdr, score, sizeof(*hdr));
 }
 
-/* Without 'no inline' here GCC generates extra instructions in init_voice() */
-static __attribute__ ((noinline)) const uint8_t *get_pattern_start_ptr(const uint8_t *s, const uint8_t pattern_idx)
+__attribute__ ((weak)) const uint8_t *get_pattern_start_ptr(const uint8_t *s, const uint8_t pattern_idx)
 {
 	const uint8_t ofs = sizeof(struct atm_score_hdr)+sizeof(uint16_t)*pattern_idx;
 	return s + pgm_read_word(s+ofs);
@@ -405,7 +404,7 @@ static void process_np_cmd(struct atm_player_state *const p, struct atm_voice_st
 	}
 }
 
-static void process_cmd(struct atm_player_state *const p, struct atm_voice_state *const v, const struct atm_cmd_data *const cmd)
+void atm_process_cmd(struct atm_player_state *const p, struct atm_voice_state *const v, const struct atm_cmd_data *const cmd)
 {
 	struct atm_voice_frame *const vf = atm_pool_idx2data_ptr(v->cur_frame);
 
@@ -644,12 +643,12 @@ static struct osc_params apply_voice_effects(const struct atm_player_state *cons
 	return osc_params;
 }
 
-__attribute__((weak)) void atm_next_command(const uint8_t *const cmd_ptr, struct atm_cmd_data *const dst)
+__attribute__((weak)) void atm_next_command(struct atm_voice_state *const v, const uint8_t voice_index, const uint8_t *const cmd_ptr, struct atm_cmd_data *const dst)
 {
 	memcpy_P(dst, cmd_ptr, sizeof(*dst));
 }
 
-static uint8_t process_voice(struct atm_player_state *const p, struct atm_voice_state *const v, const uint8_t unused_osc_ch_mask)
+static uint8_t process_voice(struct atm_player_state *const p, struct atm_voice_state *const v, const uint8_t voice_index, const uint8_t unused_osc_ch_mask)
 {
 	while (v->delay == 0) {
 		struct atm_cmd_data cmd;
@@ -659,8 +658,8 @@ static uint8_t process_voice(struct atm_player_state *const p, struct atm_voice_
 		takes up more progmem so we read a fixed amount.
 		maximum command size is 4 bytes right now
 		*/
-		atm_next_command(vf->next_cmd_ptr, &cmd);
-		process_cmd(p, v, &cmd);
+		atm_next_command(v, voice_index, vf->next_cmd_ptr, &cmd);
+		atm_process_cmd(p, v, &cmd);
 		atm_log_event("atm.player.%hhu.voice.%hhu.pattern", "%hhu f", atm_current_player_index(), atm_current_voice_index(), (uint8_t)(vf->pattern_id & ATM_VOICE_PATTERN_ID_MASK));
 	}
 
@@ -716,13 +715,13 @@ start_loop:
 		while (voice_slot != ATM_POOL_INVALID_SLOT) {
 			struct atm_voice_state *v = atm_pool_idx2data_ptr(voice_slot);
 			voice_slot = v->next_voice;
-			atm_set_log_current_voice_index(voice_index++);
+			atm_set_log_current_voice_index(voice_index);
 			if (voice_mask & active_voices_mask) {
 				/* No loop pattern if all bits are set */
 				if (loop_restart && (v->dst_osc_ch_idx >> 3 != ATM_VOICE_PATTERN_ID_MASK)) {
 					v->delay = 0;
 				}
-				if (!process_voice(p, v, unused_osc_ch_mask)) {
+				if (!process_voice(p, v, voice_index++, unused_osc_ch_mask)) {
 					p->active_voices_mask &= ~voice_mask;
 				}
 			}
