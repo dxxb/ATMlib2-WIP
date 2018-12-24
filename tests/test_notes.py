@@ -69,7 +69,7 @@ class TestNotes(unittest.TestCase):
 			'osc.tick': [(0, 'e'), (1000000, 'e'), (2000000, 'e')],
 			'atm.player.0.tick': [(0, 'e'), (1000000, 'e'), (2000000, 'e')],
 			'atm.player.0.voice.0.tempo': [(0, 0)],
-			'atm.player.0.voice.0.note': [(0, 1), (1000000, 2), (2000000, 0)],
+			'atm.player.0.voice.0.note': [(0, 49), (1000000, 50), (2000000, 0)],
 			'atm.player.0.voice.0.stop': [(2000000, 'e')],
 			'atm.player.0.stop': [(2000000, 'e')],
 		})
@@ -180,7 +180,7 @@ class TestTransposition(unittest.TestCase):
 		timestamps = range(0, 15000000, 1000000)
 		assert_expected_traces(traces, {
 			'osc.channels.0.vol': [(tm, 127) for tm in timestamps],
-			'atm.player.0.voice.0.fx.acc_dev.note': [(tm, 10) for tm in timestamps],
+			'atm.player.0.voice.0.fx.acc_dev.note': [(tm, 58) for tm in timestamps],
 			'atm.player.0.voice.0.fx.acc_dev.transpose': ([(tm, 0) for tm in timestamps[:5]]+
 												[(tm, 3) for tm in timestamps[5:10]]+
 												[(tm, -3) for tm in timestamps[10:]]),
@@ -209,7 +209,7 @@ class TestTransposition(unittest.TestCase):
 		timestamps = range(0, 15000000, 1000000)
 		assert_expected_traces(traces, {
 			'osc.channels.0.vol': [(tm, 127) for tm in timestamps],
-			'atm.player.0.voice.0.fx.acc_dev.note': [(tm, 10) for tm in timestamps],
+			'atm.player.0.voice.0.fx.acc_dev.note': [(tm, 58) for tm in timestamps],
 			'atm.player.0.voice.0.fx.acc_dev.transpose': ([(tm, 0) for tm in timestamps[:5]]+
 												[(tm, 3) for tm in timestamps[5:10]]+
 												[(tm, -3) for tm in timestamps[10:]]),
@@ -479,7 +479,7 @@ class TestArpeggioFX(unittest.TestCase):
 		})
 		assert_expected_traces(traces, {
 			# fx.acc_dev.note alternates between 0 and 1 every tick
-			'atm.player.0.voice.0.fx.acc_dev.note': [(int(tm*1E6), 1) for tm in range(0, 8)],
+			'atm.player.0.voice.0.fx.acc_dev.note': [(int(tm*1E6), 49) for tm in range(0, 8)],
 			# fx.arp.transpose is 0 every other tick
 			'atm.player.0.voice.0.fx.arp.transpose': [(int(tm*1E6), t) for tm, t in zip(range(0, 8), [0,3,0,3,0,3,0,3])],
 			# fx.arp.notecut event occurs every other tick
@@ -506,7 +506,7 @@ class TestArpeggioFX(unittest.TestCase):
 		})
 		assert_expected_traces(traces, {
 			# fx.acc_dev.note alternates between 0 and 1 every tick
-			'atm.player.0.voice.0.fx.acc_dev.note': [(int(tm*1E6), 1) for tm in range(0, 8)],
+			'atm.player.0.voice.0.fx.acc_dev.note': [(int(tm*1E6), 49) for tm in range(0, 8)],
 			# fx.arp.transpose is 0 every other tick
 			'atm.player.0.voice.0.fx.arp.transpose': [(int(tm*1E6), t) for tm, t in zip(range(0, 8), [0,3,7,0,3,7,0,3])],
 			# fx.arp.notecut event occurs every other tick
@@ -533,7 +533,7 @@ class TestArpeggioFX(unittest.TestCase):
 		})
 		assert_expected_traces(traces, {
 			# fx.acc_dev.note alternates between 0 and 1 every tick
-			'atm.player.0.voice.0.fx.acc_dev.note': [(int(tm*1E6), (tm+1) % 2) for tm in range(0, 8)],
+			'atm.player.0.voice.0.fx.acc_dev.note': [(int(tm*1E6), ((tm+1) % 2)*49) for tm in range(0, 8)],
 			# fx.arp.transpose is 0 every other tick
 			'atm.player.0.voice.0.fx.arp.transpose': [(int(tm*1E6), 0) for tm in range(0, 8, 2)],
 			# fx.arp.notecut event occurs every other tick

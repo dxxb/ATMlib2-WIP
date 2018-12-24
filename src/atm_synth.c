@@ -50,7 +50,7 @@ const uint16_t noteTable[12] PROGMEM = {
 __attribute__((weak)) uint16_t note_index_2_phase_inc(const uint8_t note_idx)
 {
 	const uint8_t adj = U8DIVBY12(note_idx);
-	return pgm_read_word(&noteTable[(note_idx-12*adj)]) >> (5-adj);
+	return pgm_read_word(&noteTable[(note_idx-12*adj)]) >> (9-adj);
 }
 
 static int16_t slide_quantity_i16(const int16_t amount, const int16_t value, const int16_t bottom, const int16_t top)
@@ -413,7 +413,17 @@ void atm_process_cmd(struct atm_player_state *const p, struct atm_voice_state *c
 	if (cmd->id >= ATM_CMD_I_NOTE_OFF) {
 		/* 0 ... 63 : NOTE ON/OFF */
 		struct atm_note_state *const n = v->note_state;
-		n->note = cmd->id-ATM_CMD_I_NOTE_OFF;
+		if (cmd->id == ATM_CMD_I_NOTE_OFF) {
+			/* cmd->id == ATM_CMD_I_NOTE_OFF : Note OFF */
+			n->note = 0;
+		} else if (cmd->id == 255) {
+			/* when cmd->id == 255 note value is in cmd->params[0] (allows to access more octaves) */
+			/* cmd->params[0] == 0 : Note OFF, cmd->params[0] == 1 : C-2, cmd->params[0] == 119 : A#7 */
+			n->note = cmd->params[0];
+		} else {
+			/* cmd->id == ATM_CMD_I_NOTE_OFF+1 : C2, cmd->id == 255-1 : C#7 */
+			n->note = cmd->id-ATM_CMD_I_NOTE_OFF+48;
+		}
 		n->flags |= FX_COMMON_FLAGS_RETRIGGER_ON_NOTEON_MASK;
 		atm_log_event("atm.player.%hhu.voice.%hhu.note", "%hhu f", atm_current_player_index(), atm_current_voice_index(), n->note);
 	} else if (cmd->id >= ATM_CMD_I_DELAY_1_TICK) {
