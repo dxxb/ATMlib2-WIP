@@ -1,119 +1,103 @@
 # ATMlib2
 
-ATMlib stands for **Arduboy Tracker Music** and is based on [_**Squawk**_](https://github.com/stg/Squawk "Squawk Github Page") a minimalistic 8-bit software synthesizer & playroutine library for Arduino, created by Davey Taylor aka STG.
+## Features
+
+### Oscillators
+
+* 4 voice oscillators (TODO: support 8 voices).
+* 93kHz PWM carrier, 16kHz sample rate
+* 10bit PWM resolution allows mixing of 4 8bit PCM voices without clipping (TODO: support 11bit for 8 voices)
+* Each oscillator has:
+ * Waveform selection: noise or a square wave.
+ * Amplitude control
+ * Frequency control
+ * Square wave duty cycle control (mod)
+ * 8bit PCM output
+
+### Synth
+
+* Independent LFO and slide effects on: volume, mod, frequency and note transposition.
+* 2/3 notes arpeggio and notecut effect.
+* Pattern call/loop. Allows pattern and slide/LFO effects nesting
+* Song loop
+* Low overhead score binary format:
+ * Selectable voice count
+ * Maximum of 31 patterns
+ * Usable for SFXs
+* Support simultaneous playback of multiple SFXs and songs (limited by memory and CPU)
+
+RAM and CPU usage are proportional to the number of players, number of voices per player and maximum number of effects concurrently active.
+
+## Overview
+
+## What does it sound like?
+
+## History
+
+ATMlib stands for **Arduboy Tracker Music** is based on [_**Squawk**_](https://github.com/stg/Squawk "Squawk Github Page") a minimalistic 8-bit software synthesizer & playroutine library for Arduino, created by Davey Taylor aka STG.
 
 While _Squawk_ provides a very nice synth, it wasn't optimized for a small footprint. Songs are not very efficient in size, so Joeri Gantois aka JO3RI asked Davey to help him work on a new score format and so ATMlib was born.
 
 ATMlib2 is built on the work of JO3RI and Davey and adds a lot of new exciting features! ATMlib2 is not compatible with ATMlib music scores.
 
+The first iteration of ATMlib2 was a rewrite of ATMlib, implemented by @dxxb and sponsored by [Modus Create](https://moduscreate.com), for the Arduboy game [EVADE 2](https://community.arduboy.com/t/evade-2-arduboys-first-space-flight-sim/4634). JO3RI and @dxxb wanted to add more features and make ATMlib2 even better so it was re-written again.
+
 Contributors (Alphabetical order):
 
 * Davey Taylor - ATMsynth - Effects
-* Delio Brignoli
+* Delio Brignoli - ATMlib rewrite, twice!
 * Jay Garcia (Modus Create)
 * Joeri Gantois - Effects
 
 Thanks to [Modus Create](https://moduscreate.com) for sponsoring and participating in the development.
 
-### New Features
 
-* Updated score format for simpler and smaller decoder
-* Add reduced size score formats: minimal scores have 1 byte overhead (for the header)
-* Command encoding designed for simpler and smaller decoder
-* Macros for manual song creation
-* C++ API built on top of C API
-* 4 channels: runtime selectable waveform can be square with programmable duty cycle or noise
-* LFO and slide effects can be applied to square wave duty cycle
-* Asynchronous playback of 1 sound effect as a mono music score on an arbitrary channel with independent tempo. Music is muted on the channel used by sound effects and resumed when the sound effect is stopped or playback finishes
-* Dual timer design: 93kHz PWM carrier for improved audio quality (was 31kHz)
-* 10bit PWM resolution: mixing of 4 8bit full volume channels without clipping
-* Reduced CPU usage by interrupts: interrupt rate halved without reducing sample rate, simplified interrupt handler
-* Note frequencies are closer to the expected value within the limits of the MCU's clocksource
-* Effects can selectively disabled at compile time to reduce code size
-* Automatic interrupt and PWM disable when not in use to save CPU cycles and battery
 
-All of the above while code size was reduced (from 3245 to 2268 bytes as of da3cdbca79ea5ce22431061a4365d45d771434b3) and bug were squashed!
-
-### To Do
-
-* Reduce SRAM used by effect parameters
-* Try implementing selectable waveforms: triangle, sawtooth, square and lookup table
-* Support 8 channels music
-
-### Music playback example
-
+### Music and SFX playback example
 
 ##### C
 ``` C
 ...
-#include "atm_synth.h"
+#include <atm_synth.h>
 
-void setup() {
-    arduboy.begin();
-    arduboy.setFrameRate(15);
-    arduboy.audio.on();
-    
-    /* Begin playback of song */
-    atm_synth_setup();
-    atm_synth_play_score(score);
+/* Declare 2 players (index 0 and 1) */
+ATM_PLAYERS(2);
+/* Declare the memory pool with a size of 250 bytes */
+ATM_MEM_POOL(250);
+
+void play_sfx(uint8_t sfx_index) {
+    struct atm_entry_patterns ep;
+    /* use one voice */
+    ep.voice_count = 1;
+    /* SFX is played back using oscillator 4 (index 3) */
+    ep.voices[0].osc_idx = 3;
+    /* SFX is a pattern in an ATM score */
+    ep.voices[0].pattern_idx = sfx_index;
+    /* setup player index 1 to playback selected SFX */
+    atm_synth_player_setup(1, sfx, &ep);
+    /* unpause player index 1 */
+    atm_synth_player_set_pause(1, false);
+}
+
+void start_song() {
+    /* setup oscillators */
+    osc_setup();
+    /* setup the synth */
+    atm_setup();
+    /* enable the ISR used by oscillators */
+    osc_set_isr_active(true);
+    /* setup player index 0 */
+    atm_synth_player_setup(0, score, NULL);
+    /* Begin playback on player index 0 */
+    atm_synth_player_set_pause(0, false);
 }
 ```
 
-##### C++
-``` C++
-...
-#include "ATMlib.h"
+## Compile time options
 
-ATMsynth ATM;
+ATMlib2 by default compiles with support for as many voices as supported by the OSC library (currently 4 voices) and with all effects enables. The library's memory footprint can be reduced by disabling effects at compile time.
 
-void setup() {
-    arduboy.begin();
-    arduboy.setFrameRate(15);
-    arduboy.audio.on();
-
-    /* Begin playback of song */
-    ATM.play(score);
-}
-```
-
-
-### Sound effect playback example
-
-``` C
-...
-#include "atm_synth.h"
-
-/* Temporary storage used by sound effect while playing back */
-struct atm_sfx_state sfx_state;
-
-void setup() {
-    arduboy.begin();
-    arduboy.setFrameRate(15);
-    arduboy.audio.on();
-
-    // Begin playback of song.
-    atm_synth_setup();
-    atm_synth_play_score(score);
-}
-
-void loop() {
-    if (!(arduboy.nextFrame()))
-        return;
-
-    arduboy.pollButtons();
-
-    if (arduboy.justPressed(B_BUTTON)) {
-        /* Start playback of sfx1 on channel 1 */
-        atm_synth_play_sfx_track(OSC_CH_ONE, &sfx1, &sfx_state);
-    }
-
-    if (arduboy.justPressed(A_BUTTON)) {
-        atm_synth_stop_sfx_track(&sfx_state);
-    }
-
-    arduboy.display();
-}
-```
+If you are working with the Arduino IDE environment then you must checkout a copy of ATMlib2 private to your project and edit the `src/atm_config.h` file to enable/disable supported effects. For instance `#define ATM_HAS_FX_SLIDE (1)` will enable slide effects while `#define ATM_HAS_FX_SLIDE (0)` will disable it.
 
 ### Music score memory layout
 
