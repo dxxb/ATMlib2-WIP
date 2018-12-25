@@ -75,7 +75,25 @@ def sfx3_sfx():
 				synth.slide(synth.FX_PARM.VOL, 8),
 				synth.note('F5'),
 				synth.delay(24),
-				synth.slide(synth.FX_PARM.VOL, -8),
+				synth.set_param(synth.FX_PARM.VOL, 127),
+				synth.slide(synth.FX_PARM.VOL, -4),
+				synth.delay(24),
+				synth.end_pattern(),
+			),
+		]
+	}
+
+def sfx4_sfx():
+	return {
+		'voice_count': 1,
+		'patterns': [
+			score.concat_bytes(
+				synth.set_tempo(48),
+				synth.set_param(synth.FX_PARM.VOL, 127),
+				synth.note('C2'),
+				synth.set_param(synth.FX_PARM.PHI, -127),
+				synth.slide(synth.FX_PARM.PHI, -8),
+				synth.delay(24),
 				synth.delay(24),
 				synth.end_pattern(),
 			),
@@ -83,7 +101,7 @@ def sfx3_sfx():
 	}
 
 
-funcs = [coin_sfx, sfx1_sfx, sfx2_sfx, sfx3_sfx]
+funcs = [coin_sfx, sfx1_sfx, sfx2_sfx, sfx3_sfx, sfx4_sfx]
 
 
 def main():
