@@ -374,8 +374,7 @@ static void process_np_cmd(struct atm_player_state *const p, struct atm_voice_st
 		if (fx) {
 			fx->common.flags = (cmd->params[0] & (FX_COMMON_FLAGS_RETRIGGER_ON_NOTEON_MASK | FX_COMMON_FLAGS_DESTINATION_PARAM_MASK));
 			fx->depth = cmd->params[1] & FX_LFO_DEPTH_MASK;
-			fx->acc_amount = -fx->depth;
-			fx->slope = (cmd->params[2] >> 4)+1;
+			fx->step = (cmd->params[2] >> 4)+1;
 			fx->common.interval = cmd->params[2] & 0x0F;
 		}
 #endif /* ATM_HAS_FX_LFO */
@@ -472,18 +471,23 @@ static void apply_lfo_fx(struct fx_processing_state *const s, struct fx_common_s
 	}
 
 	if (update_due) {
-		const uint8_t lfo_step = fx->slope;
-		const int16_t lim = -(2*fx->depth);
-		fx->acc_amount += lfo_step;
-		const int16_t diff = fx->acc_amount + lim;
-		if (diff > 0) {
-			fx->acc_amount = lim + diff;
+		int16_t amount = fx->acc_amount;
+
+		amount += fx->step;
+		const int16_t diff = _abs_i16(amount) - fx->depth;
+		if (diff >= 0) {
+			fx->step = -fx->step;
+			if (diff) {
+				goto skip_update_amount;
+			}
 		}
+		fx->acc_amount = amount;
+	skip_update_amount:
+		;
 	}
 	const uint8_t param = fx->common.flags & FX_COMMON_FLAGS_DESTINATION_PARAM_MASK;
-	const int16_t res = fx->depth-_abs_i16(fx->acc_amount);
-	atm_log_event("atm.player.%hhu.voice.%hhu.fx.lfo.%s", "%hd f", atm_current_player_index(), atm_current_voice_index(), atm_log_fx_dest_label(param), res);
-	apply_fx_param_delta(s->acc_fx_param, param, res);
+	atm_log_event("atm.player.%hhu.voice.%hhu.fx.lfo.%s", "%hhd f", atm_current_player_index(), atm_current_voice_index(), atm_log_fx_dest_label(param), fx->acc_amount);
+	apply_fx_param_delta(s->acc_fx_param, param, fx->acc_amount);
 }
 
 static void apply_arpeggio_fx(struct fx_processing_state *const s, struct fx_common_state *const c, const uint8_t triggered, const uint8_t update_due)

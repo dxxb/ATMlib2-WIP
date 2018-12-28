@@ -59,7 +59,7 @@ struct atm_fx_slide_slot {
 		struct fx_common_state common;
 		int8_t acc_amount;
 		uint8_t depth;
-		uint8_t slope; /* aaaaiiii */
+		int8_t step;
 	} __attribute__((packed));
 //#endif /* ATM_HAS_FX_LFO */
 
