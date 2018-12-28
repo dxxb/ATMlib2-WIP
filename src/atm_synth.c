@@ -454,7 +454,7 @@ static void apply_slide_fx(struct fx_processing_state *const s, struct fx_common
 	if (update_due) {
 		const int16_t tmp = fx->acc_amount + fx->amount;
 		fx->acc_amount = tmp;
-		if ((fx->target > 0 && tmp > fx->target) || (fx->target < 0 && tmp < fx->target)) {
+		if ((fx->target >= 0 && tmp >= fx->target) || (fx->target < 0 && tmp < fx->target)) {
 			fx->acc_amount = fx->target;
 			atm_log_event("atm.player.%hhu.voice.%hhu.fx.slide.%s.clamp", "e", atm_current_player_index(), atm_current_voice_index(), atm_log_fx_dest_label(param));
 		}
